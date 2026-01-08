@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Stories Generator</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="card">
+    <h1>AI Stories Generator</h1>
+    <label>Choose random words!</label>
+    <input id="seed" placeholder="Ex: A violinist in Buenos Aires" />
+    <div class="controls">
+      <input id="tone" placeholder="Choose genre or tone (ex: romantic cyberpunk)" />
+      <select id="length">
+        <option value="short">Short</option>
+        <option value="medium">Medium</option>
+        <option value="long">Large</option>
+      </select>
+      <button id="btn">Create</button>
+    </div>
+
+    <h3>Story</h3>
+    <div id="output"><p class="hint">Your story will appear here</p></div>
+  </div>
+
+  <script src="/main.js"></script>
+</body>
+</html>

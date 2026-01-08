@@ -1,0 +1,35 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.production
+.env.test
+
+# Build / Deploy caches
+.vercel/
+.netlify/
+.cache/
+.cache-loader/
+.next/
+dist/
+build/
+
+# Coverage / tests
+coverage/
+
+# Editor / OS
+.vscode/
+*.sublime*
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log

@@ -1,0 +1,45 @@
+body {
+  font-family: system-ui, sans-serif;
+  background: #f6f7fb;
+  margin: 0;
+  padding: 24px;
+}
+
+.card {
+  max-width: 720px;
+  margin: 24px auto;
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+input,
+select,
+button,
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+  border-radius: 6px;
+  border: 1px solid #dddddd;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.controls select,
+.controls button {
+  width: auto;
+  flex: 1;
+}
+
+pre {
+  white-space: pre-wrap;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 6px;
+}
