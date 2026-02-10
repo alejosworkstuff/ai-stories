@@ -23,22 +23,35 @@ btn.addEventListener("click", async () => {
       body: JSON.stringify({ seed, tone, length }),
     });
 
-    const data = await res.json();
+    const contentType = res.headers.get("content-type") || "";
+    let data = null;
+
+    if (contentType.includes("application/json")) {
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+    }
 
     if (!res.ok) {
-  if (res.status === 402) {
-    renderError(
-      "The AI service has no available credits right now. " +
-      "This is expected if you're running the project without your own API token."
-    );
-  } else {
-    renderError(data.error || "Something went wrong. Please try again.");
-  }
-  return;
-}
+      if (res.status === 402) {
+        renderError(
+          "The AI service has no available credits right now. " +
+            "This is expected if you're running the project without your own API token."
+        );
+      } else {
+        const message =
+          data?.error ||
+          (typeof data === "string" ? data : null) ||
+          `Request failed (${res.status}). Please try again.`;
+        renderError(message);
+      }
+      return;
+    }
 
+    renderStory(data?.output ?? "");
 
-    renderStory(data.output);
   } catch (err) {
     renderError(err.message);
   } finally {
