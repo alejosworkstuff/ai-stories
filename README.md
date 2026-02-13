@@ -51,8 +51,8 @@ This ensures the application fails gracefully and predictably, without crashing 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/ia-stories.git
-cd ia-stories
+git clone https://github.com/alejosworkstuff/ai-stories.git
+cd ai-stories
 ```
 
 1. Install dependencies:
