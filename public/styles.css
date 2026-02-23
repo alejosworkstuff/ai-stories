@@ -2,16 +2,16 @@ body {
   font-family: system-ui, sans-serif;
   background: #f6f7fb;
   margin: 0;
-  padding: 24px;
+  padding: 24px 24px 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .card {
-  max-width: 720px;
-  margin: 24px auto;
-  background: #ffffff;
-  padding: 18px;
-  border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+width: calc(100% - 96px); 
+margin: 24px auto;
+padding: 18px;
 }
 
 input,
@@ -23,6 +23,7 @@ textarea {
   margin-top: 8px;
   border-radius: 6px;
   border: 1px solid #dddddd;
+  box-sizing: border-box;
 }
 
 .controls {
@@ -42,4 +43,56 @@ pre {
   background: #f8fafc;
   padding: 12px;
   border-radius: 6px;
+}
+
+.site-footer {
+  margin-top: auto;
+  padding: 20px 0;
+  border-top: 1px solid #ddd;
+  color: #999;
+  font-size: 0.9rem;
+  position: relative;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.separator {
+  color: #999;
+}
+
+.site-footer a {
+  background: #0066cc;
+  color: white;
+  padding: 10px 16px;
+  text-decoration: none;
+  border-radius: 6px;
+  display: inline-block;
+  font-weight: 600;
+}
+
+.site-footer a:hover {
+  background: #0052a3;
+}
+
+#output {
+  background-color: #f8fafc;
+  border: 1px solid #ddd;
+  padding: 16px;
+  border-radius: 8px;
+  min-height: 200px;
+  margin-top: 12px;
+}
+
+.separator {
+  font-size: 1.25rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
