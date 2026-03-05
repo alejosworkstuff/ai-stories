@@ -9,10 +9,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "method_not_allowed" });
   }
 
-  const { seed, tone = "neutral", length = "short" } = req.body || {};
+  const { messages, tone = "neutral", length = "short" } = req.body || {};
 
-  if (!seed || !seed.trim()) {
-    return res.status(400).json({ error: "seed_required" });
+  if (!messages || !messages.length()) {
+    return res.status(400).json({ error: "messages_required" });
   }
 
   const lengthSettings = {
@@ -23,16 +23,20 @@ export default async function handler(req, res) {
 
   const settings = lengthSettings[length] || lengthSettings.short;
 
-  const prompt = `
-Write a ${length} story.
-Tone: ${tone}
-Seed elements: ${seed}
+const conversation = messages
+  .map(m => `${m.role}: ${m.content}`)
+  .join("\n");
 
-Structure:
-- ${settings.paragraphs} paragraphs
-- Clear protagonist and goal
-- Narrative arc
-- Emotional ending
+const prompt = `
+Continue the following story.
+
+Tone: ${tone}
+
+Conversation:
+${conversation}
+
+Write the next part of the story.
+${settings.paragraphs} paragraphs.
 
 Return ONLY the story text.
 `.trim();
