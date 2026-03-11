@@ -1,4 +1,5 @@
 let messages = [];
+
 const btn = document.getElementById("btn");
 const seedEl = document.getElementById("seed");
 const toneEl = document.getElementById("tone");
@@ -7,6 +8,8 @@ const out = document.getElementById("output");
 const copyBtn = document.getElementById("copyBtn");
 const stats = document.getElementById("stats");
 const regenBtn = document.getElementById("regenBtn");
+const historyEl = document.getElementById("history");
+
 const randomSeeds = [
   "A time traveler stuck in ancient Rome",
   "A detective who can hear lies",
@@ -18,15 +21,68 @@ const randomSeeds = [
   "A ghost trapped inside a smartphone"
 ];
 
+
+
+function loadHistory() {
+  if (!historyEl) return;
+
+  let saved = [];
+
+  try {
+    saved = JSON.parse(localStorage.getItem("storyHistory")) || [];
+  } catch {
+    saved = [];
+  }
+
+  historyEl.innerHTML = "";
+
+  saved.forEach((story) => {
+    const safeStory = String(story);
+
+    const li = document.createElement("li");
+
+    li.textContent =
+      safeStory.length > 60
+        ? safeStory.slice(0, 60) + "..."
+        : safeStory;
+
+    li.addEventListener("click", () => {
+      renderStory(safeStory);
+    });
+
+    historyEl.appendChild(li);
+  });
+}
+
+function saveStory(story) {
+  let saved = [];
+
+  try {
+    saved = JSON.parse(localStorage.getItem("storyHistory")) || [];
+  } catch {
+    saved = [];
+  }
+
+  saved.unshift(String(story));
+
+  if (saved.length > 20) {
+    saved.pop();
+  }
+
+  localStorage.setItem("storyHistory", JSON.stringify(saved));
+}
+
+
+
 async function requestStory(payload) {
-  const res = await fetch("/api/generate-story", {
+  return fetch("/api/generate-story", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-
-  return res;
 }
+
+
 
 async function generateStory() {
   const seed = seedEl.value.trim();
@@ -46,11 +102,7 @@ async function generateStory() {
   setLoading(true);
 
   try {
-    const res = await fetch("/api/generate-story", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, tone, length }),
-    });
+    const res = await requestStory({ messages, tone, length });
 
     const contentType = res.headers.get("content-type") || "";
     let data = null;
@@ -69,7 +121,6 @@ async function generateStory() {
       } else {
         const message =
           data?.error ||
-          (typeof data === "string" ? data : null) ||
           `Request failed (${res.status}). Please try again.`;
 
         renderError(message);
@@ -77,13 +128,17 @@ async function generateStory() {
       return;
     }
 
-    const story = data?.output ?? "";
+    const story = String(data?.output ?? "");
+
     messages.push({
       role: "assistant",
       content: story
     });
 
     renderStory(story);
+
+    saveStory(story);
+    loadHistory();
 
   } catch (err) {
     renderError(err?.message || "Unexpected error.");
@@ -92,6 +147,7 @@ async function generateStory() {
   }
 }
 
+
 async function copyStory() {
   const text = out.innerText.trim();
 
@@ -99,6 +155,7 @@ async function copyStory() {
 
   try {
     await navigator.clipboard.writeText(text);
+
     copyBtn.textContent = "Copied!";
 
     setTimeout(() => {
@@ -110,40 +167,33 @@ async function copyStory() {
   }
 }
 
+
+
 btn?.addEventListener("click", generateStory);
 
-regenBtn?.addEventListener("click", () => {
-  generateStory();
-});
+regenBtn?.addEventListener("click", generateStory);
 
 copyBtn?.addEventListener("click", copyStory);
 
 seedEl?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    generateStory();
-  }
+  if (e.key === "Enter") generateStory();
 });
 
 toneEl?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    generateStory();
-  }
+  if (e.key === "Enter") generateStory();
 });
 
 
-/* =====================
-   Helpers
-===================== */
 
 function generateRandomSeed() {
   const randomIndex = Math.floor(Math.random() * randomSeeds.length);
-  const random = randomSeeds[randomIndex];
-  seedEl.value = random;
+  seedEl.value = randomSeeds[randomIndex];
 }
 
 function updateStats(text) {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
   const chars = text.length;
+
   stats.innerHTML = `Words: ${words} | Characters: ${chars}`;
 }
 
@@ -153,7 +203,9 @@ function renderError(message) {
 
 function renderStory(output) {
   const text = Array.isArray(output) ? output.join("\n\n") : output;
+
   out.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
+
   updateStats(text);
 }
 
@@ -172,4 +224,7 @@ function escapeHtml(s) {
   }[c]));
 }
 
+
+
 generateRandomSeed();
+loadHistory();
