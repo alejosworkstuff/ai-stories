@@ -1,58 +1,163 @@
-body {
-  font-family: system-ui, sans-serif;
-  background: #f6f7fb;
-  margin: 0;
-  padding: 24px 24px 0;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.app{
-  display:grid;
-  grid-template-columns:250px 1fr;
-  gap:20px;
-  max-width:1000px;
-  width:100%;
-}
-
-input,
-select,
-button,
-textarea {
-  width: 100%;
-  padding: 8px;
-  margin-top: 8px;
-  border-radius: 6px;
-  border: 1px solid #dddddd;
+* {
   box-sizing: border-box;
 }
 
-.controls {
+body {
+  font-family: system-ui, sans-serif;
+  background: #e8e2d6;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  flex-direction: column;
 }
 
-.controls select,
-.controls button {
-  width: auto;
+.app {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "sidebar main";
+  grid-template-rows: 1fr;
+  gap: 20px;
   flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: 20px;
+  padding-bottom: 0;
+}
+
+.history-box {
+  grid-area: sidebar;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  background: #f0ebe3;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  overflow-y: auto;
+  width: 400px;
+  min-width: 56px;
+  max-width: 400px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-box.expanded {
+  width: 400px;
+  max-width: 400px;
+}
+
+.history-box:not(.expanded) {
+  width: 56px;
+  max-width: 56px;
+}
+
+.history-box:not(.expanded) .history-toggle {
+  font-size: 1.2rem;
+  padding: 12px 8px;
+  line-height: 1;
+}
+
+.history-box h3 {
+  flex-shrink: 0;
+}
+
+.history-box ul {
+  flex: 1;
+}
+
+.history-box:not(.expanded) h3,
+.history-box:not(.expanded) ul {
+  display: none;
+}
+
+.history-toggle {
+  margin-top: auto;
+  padding: 10px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: 6px;
+  background: #d9d0c2;
+  color: #5a554d;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.history-toggle:hover {
+  background: #cfc6b6;
+  color: #3d3a35;
+}
+
+.card {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px;
+  background: #f9f6f1;
+  border-radius: 8px;
+}
+
+#output {
+  flex: 1 1 auto;
+  min-height: 50vh;
+  background-color: #fdfbf8;
+  border: 1px solid #e8e2d6;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow-y: auto;
+}
+
+.story-actions {
+  margin-bottom: 20px;
+}
+
+.controls-box {
+  margin-top: 20px;
+  background: #f0ebe3;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.controls-box input,
+.controls-box select {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #e0d9cc;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+input, select, button, textarea {
+  font-family: inherit;
 }
 
 pre {
   white-space: pre-wrap;
-  background: #f8fafc;
-  padding: 12px;
+  background: transparent;
+  padding: 12px 0;
   border-radius: 6px;
 }
 
 .site-footer {
   margin-top: auto;
   padding: 20px 0;
-  border-top: 1px solid #ddd;
-  color: #999;
+  border-top: 1px solid #d9d0c2;
+  color: #7a756d;
   font-size: 0.9rem;
   position: relative;
 }
@@ -66,10 +171,6 @@ pre {
   padding: 0 24px;
 }
 
-.separator {
-  color: #999;
-}
-
 .site-footer a {
   background: #0066cc;
   color: white;
@@ -80,25 +181,7 @@ pre {
   font-weight: 600;
 }
 
-.site-footer a:hover {
-  background: #0052a3;
-}
-
-#output {
-  background-color: #f8fafc;
-  border: 1px solid #ddd;
-  padding: 16px;
-  border-radius: 8px;
-  min-height: 200px;
-  margin-top: 12px;
-}
-
-.separator {
-  font-size: 1.25rem;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-}
+.site-footer a:hover { background: #0052a3; }
 
 .hint {
   opacity: 0.7;
@@ -111,16 +194,22 @@ pre {
   100% {opacity:.4}
 }
 
-.controls button:hover {
-  background:#ddd;
-  cursor:pointer;
+.history-box h3 {
+  margin-top: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #a89f8e;
 }
 
-.story-actions button:hover {
-  background:#ddd;
-  cursor:pointer;
+.history-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-button:active {
-  transform:translateY(1px);
+.history-box li {
+  padding: 6px;
+  border-bottom: 1px solid #e5dfd5;
+  cursor: pointer;
 }
+
+.history-box li:hover { background: #e8e2d6; }

@@ -7,43 +7,54 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="card">
-    <h1>AI Stories Generator</h1>
-    <label>Choose random words!</label>
-    <input id="seed" placeholder="Ex: A violinist in Buenos Aires" />
-    <div class="controls">
-      <input id="tone" placeholder="Choose genre or tone (ex: romantic cyberpunk)" />
-      <select id="length">
-        <option value="short">Short</option>
-        <option value="medium">Medium</option>
-        <option value="long">Large</option>
-      </select>
-      <button id="btn">Create</button>
-      <button id="regenBtn">Regenerate</button>
+  <div class="app">
+    <!-- Barra lateral -->
+    <aside class="history-box expanded" id="historyBox">
+      <h3>Story History</h3>
+      <ul id="history"></ul>
+      <button id="toggleHistory" class="history-toggle" type="button" aria-label="Expand or collapse history" >« Collapse</button>
+    </aside>
+
+    <!-- Contenido principal -->
+    <div class="card">
+      <h1>AI Stories Generator</h1>
+
+      <!-- Historia arriba -->
+      <h3>Story</h3>
+      <div id="output"><p class="hint">Your story will appear here</p></div>
+      <div class="story-actions">
+        <button id="copyBtn" style="display:none">Copy story</button>
+      </div>
+      <div id="stats" class="stats"></div>
+
+      <!-- Controles abajo -->
+      <div class="controls-box">
+        <label>Choose random words!</label>
+        <input id="seed" placeholder="Ex: A violinist in Buenos Aires" />
+        <input id="tone" placeholder="Choose genre or tone (ex: romantic cyberpunk)" />
+        <select id="length">
+          <option value="short">Short</option>
+          <option value="medium">Medium</option>
+          <option value="long">Large</option>
+        </select>
+        <div class="buttons">
+          <button id="btn">Create</button>
+          <button id="regenBtn">Regenerate</button>
+        </div>
+      </div>
     </div>
-
-    <h3>Story</h3>
-    <div id="output"><p class="hint">Your story will appear here</p></div>
   </div>
-<div class="app">
 
-   <aside class="history-box">
-      Story History
-   </aside>
-
-
-
-</div>
-    
-    <h3>Story History</h3>
-    <ul id="history"></ul>
-
-  <div class="story-actions">
-    <button id="copyBtn" style="display:none">Copy story</button>
-  </div>
-    
-  <div id="stats" class="stats"></div>
-
+  <script>
+    document.getElementById("toggleHistory")?.addEventListener("click", function(e) {
+      e.preventDefault();
+      var box = document.getElementById("historyBox");
+      var btn = document.getElementById("toggleHistory");
+      if (!box) return;
+      box.classList.toggle("expanded");
+      if (btn) btn.textContent = box.classList.contains("expanded") ? "« Collapse" : "»";
+    });
+  </script>
   <script src="./main.js"></script>
   <footer class="site-footer">
     <div class="footer-inner">

@@ -1,5 +1,13 @@
 let messages = [];
 
+function whenReady(fn) {
+  if (document.readyState !== "loading") {
+    fn();
+  } else {
+    document.addEventListener("DOMContentLoaded", fn);
+  }
+}
+
 const btn = document.getElementById("btn");
 const seedEl = document.getElementById("seed");
 const toneEl = document.getElementById("tone");
@@ -74,20 +82,21 @@ function saveStory(story) {
 }
 
 
-async function requestStory(payload) {
-  return fetch("/api/generate-story", {
+async function requestStory(payload, signal) {
+  return fetch("/api/generate-stories", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal,
   });
 }
 
 
 
 async function generateStory() {
-  const seed = seedEl.value.trim();
-  const tone = toneEl.value.trim();
-  const length = lengthEl.value;
+  const seed = (seedEl?.value ?? "").trim();
+  const tone = (toneEl?.value ?? "").trim();
+  const length = lengthEl?.value ?? "short";
 
   setLoading(true);
 
@@ -104,11 +113,15 @@ async function generateStory() {
     }
   ];
 
-  
-  out.innerHTML = "<p class='hint'>Generating story...</p>";
+  if (out) out.innerHTML = "<p class='hint'>Generating story...</p>";
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
 
   try {
-    const res = await requestStory({ messages, tone, length });
+    const res = await requestStory({ messages, tone, length }, controller.signal);
+
+    clearTimeout(timeoutId);
 
     const contentType = res.headers.get("content-type") || "";
     let data = null;
@@ -122,15 +135,11 @@ async function generateStory() {
     }
 
     if (!res.ok) {
-
       const story = generateLocalStory(seed, tone, length);
-
-        out.innerHTML = "<p class='hint'>AI unavailable — using local generator</p>";
-
-        renderStory(story);
-        saveStory(story);
-        loadHistory();
-
+      if (out) out.innerHTML = "<p class='hint'>AI unavailable — using local generator</p>";
+      renderStory(story);
+      saveStory(story);
+      loadHistory();
       return;
     }
 
@@ -142,20 +151,19 @@ async function generateStory() {
     });
 
     renderStory(story);
-
     saveStory(story);
     loadHistory();
 
   } catch (err) {
-   const story = generateLocalStory(seed, tone, length);
-
-   out.innerHTML = "<p class='hint'>Failed to connect to server — using local generator</p>";
-   renderStory(story);
-   saveStory(story);
-   loadHistory();
-} finally {
-  setLoading(false);
- }
+    clearTimeout(timeoutId);
+    const story = generateLocalStory(seed, tone, length);
+    if (out) out.innerHTML = "<p class='hint'>Using local generator</p>";
+    renderStory(story);
+    saveStory(story);
+    loadHistory();
+  } finally {
+    setLoading(false);
+  }
 }
 
 async function copyStory() {
@@ -306,6 +314,8 @@ return paragraphs.join("\n\n");
 }
 
 
-generateRandomSeed();
-loadHistory();
+whenReady(function() {
+  if (seedEl) generateRandomSeed();
+  loadHistory();
+});
 
