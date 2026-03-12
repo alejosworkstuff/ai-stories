@@ -118,6 +118,12 @@ async function generateStory() {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 12000);
 
+  function useLocalFallback(message) {
+    const story = generateLocalStory(seed, tone, length);
+    renderStory(story, message);
+    saveStory(story);
+    loadHistory();
+  }
   try {
     const res = await requestStory({ messages, tone, length }, controller.signal);
 
@@ -134,16 +140,16 @@ async function generateStory() {
       }
     }
 
-    if (!res.ok) {
-      const story = generateLocalStory(seed, tone, length);
-      if (out) out.innerHTML = "<p class='hint'>AI unavailable — using local generator</p>";
-      renderStory(story);
-      saveStory(story);
-      loadHistory();
+    const story = String(data?.output ?? "");
+    const isOutOfCredits = res.status === 402;
+    if (!res.ok || !story.trim()) {
+      useLocalFallback(
+        isOutOfCredits
+          ? "Out of credits - generating fallback story"
+          : "AI unavailable - using local generator"
+      );
       return;
     }
-
-    const story = String(data?.output ?? "");
 
     messages.push({
       role: "assistant",
@@ -156,11 +162,7 @@ async function generateStory() {
 
   } catch (err) {
     clearTimeout(timeoutId);
-    const story = generateLocalStory(seed, tone, length);
-    if (out) out.innerHTML = "<p class='hint'>Using local generator</p>";
-    renderStory(story);
-    saveStory(story);
-    loadHistory();
+    useLocalFallback("Using local generator");
   } finally {
     setLoading(false);
   }
@@ -205,6 +207,7 @@ toneEl?.addEventListener("keydown", (e) => {
 
 function generateRandomSeed() {
   const randomIndex = Math.floor(Math.random() * randomSeeds.length);
+  if (!seedEl) return;
   seedEl.value = randomSeeds[randomIndex];
 }
 
@@ -219,17 +222,22 @@ function renderError(message) {
   out.innerHTML = `<p style="color:#b00">${escapeHtml(message)}</p>`;
 }
 
-function renderStory(output) {
+function renderStory(output, notice) {
 
-  copyBtn?.style.display = "block";
+  if (copyBtn) copyBtn.style.display = "block";
   
   const text = Array.isArray(output) ? output.join("\n\n") : output;
+  const noticeHtml = notice
+    ? `<p class="hint">${escapeHtml(notice)}</p>`
+    : "";
 
-  out.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
+  if (!out) return;
+
+  out.innerHTML = `${noticeHtml}<pre>${escapeHtml(text)}</pre>`;
 
   updateStats(text);
   
-  out.scrollIntoView({ behavior: "smooth" });
+  if (out) out.scrollIntoView({ behavior: "smooth" });
 }
 
 function setLoading(isLoading) {

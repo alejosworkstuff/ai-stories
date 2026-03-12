@@ -12,7 +12,7 @@
     <aside class="history-box expanded" id="historyBox">
       <h3>Story History</h3>
       <ul id="history"></ul>
-      <button id="toggleHistory" class="history-toggle" type="button" aria-label="Expand or collapse history" >Â« Collapse</button>
+      <button id="toggleHistory" class="history-toggle" type="button" aria-label="Expand or collapse history" >« Collapse</button>
     </aside>
 
     <!-- Contenido principal -->
@@ -52,7 +52,7 @@
       var btn = document.getElementById("toggleHistory");
       if (!box) return;
       box.classList.toggle("expanded");
-      if (btn) btn.textContent = box.classList.contains("expanded") ? "Â« Collapse" : "Â»";
+      if (btn) btn.textContent = box.classList.contains("expanded") ? "« Collapse" : "»";
     });
   </script>
   <script src="./main.js"></script>
