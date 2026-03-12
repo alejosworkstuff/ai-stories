@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
   const { messages, tone = "neutral", length = "short" } = req.body || {};
 
-  if (!messages || !messages.length()) {
+  if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: "messages_required" });
   }
 

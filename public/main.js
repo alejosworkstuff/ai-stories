@@ -10,6 +10,7 @@ const stats = document.getElementById("stats");
 const regenBtn = document.getElementById("regenBtn");
 const historyEl = document.getElementById("history");
 
+
 const randomSeeds = [
   "A time traveler stuck in ancient Rome",
   "A detective who can hear lies",
@@ -73,7 +74,6 @@ function saveStory(story) {
 }
 
 
-
 async function requestStory(payload) {
   return fetch("/api/generate-story", {
     method: "POST",
@@ -89,17 +89,23 @@ async function generateStory() {
   const tone = toneEl.value.trim();
   const length = lengthEl.value;
 
+  setLoading(true);
+
   if (!seed) {
     renderError("Put a seed.");
+    setLoading(false);
     return;
   }
 
-  messages.push({
-    role: "user",
-    content: seed
-  });
+  messages = [
+    {
+      role: "user",
+      content: seed
+    }
+  ];
 
-  setLoading(true);
+  
+  out.innerHTML = "<p class='hint'>Generating story...</p>";
 
   try {
     const res = await requestStory({ messages, tone, length });
@@ -116,15 +122,15 @@ async function generateStory() {
     }
 
     if (!res.ok) {
-      if (res.status === 402) {
-        renderError("The AI service has no available credits right now.");
-      } else {
-        const message =
-          data?.error ||
-          `Request failed (${res.status}). Please try again.`;
 
-        renderError(message);
-      }
+      const story = generateLocalStory(seed, tone, length);
+
+        out.innerHTML = "<p class='hint'>AI unavailable — using local generator</p>";
+
+        renderStory(story);
+        saveStory(story);
+        loadHistory();
+
       return;
     }
 
@@ -141,12 +147,16 @@ async function generateStory() {
     loadHistory();
 
   } catch (err) {
-    renderError(err?.message || "Unexpected error.");
-  } finally {
-    setLoading(false);
-  }
-}
+   const story = generateLocalStory(seed, tone, length);
 
+   out.innerHTML = "<p class='hint'>Failed to connect to server — using local generator</p>";
+   renderStory(story);
+   saveStory(story);
+   loadHistory();
+} finally {
+  setLoading(false);
+ }
+}
 
 async function copyStory() {
   const text = out.innerText.trim();
@@ -202,15 +212,22 @@ function renderError(message) {
 }
 
 function renderStory(output) {
+
+  copyBtn?.style.display = "block";
+  
   const text = Array.isArray(output) ? output.join("\n\n") : output;
 
   out.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
 
   updateStats(text);
+  
+  out.scrollIntoView({ behavior: "smooth" });
 }
 
 function setLoading(isLoading) {
   btn.disabled = isLoading;
+  regenBtn.disabled = isLoading;
+
   btn.textContent = isLoading ? "Generating..." : "Create";
 }
 
@@ -224,7 +241,71 @@ function escapeHtml(s) {
   }[c]));
 }
 
+function generateLocalStory(seed, tone, length) {
+
+const intros = [
+   `It began with ${seed}.`,
+   `Everything started when ${seed}.`,
+   `No one expected that ${seed}.`,
+   `The story truly begins when ${seed}.`
+];
+
+const conflicts = [
+   "Soon, something went terribly wrong.",
+   "But the situation quickly became dangerous.",
+   "What seemed simple soon turned into chaos.",
+   "Then an unexpected problem appeared."
+];
+
+const twists = [
+   "A hidden truth slowly revealed itself.",
+   "Someone was not who they claimed to be.",
+   "Reality was not what it seemed.",
+   "A secret changed everything."
+];
+
+const endings = [
+   "In the end, nothing would ever be the same.",
+   "From that day forward, the world felt different.",
+   "The experience left a permanent mark.",
+   "And that is how the legend was born."
+];
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+let paragraphs = [];
+
+paragraphs.push(pick(intros));
+
+if (length === "medium" || length === "long") {
+  paragraphs.push(pick(conflicts));
+}
+
+if (length === "long") {
+  paragraphs.push(pick(twists));
+}
+
+paragraphs.push(pick(endings));
+
+if (tone === "dark") {
+  paragraphs.push("A quiet sense of dread remained in the air.");
+}
+
+if (tone === "funny") {
+  paragraphs.push("Looking back, it was all a bit ridiculous.");
+}
+
+if (tone === "epic") {
+  paragraphs.push("Songs would later be written about this moment.");
+}
+
+return paragraphs.join("\n\n");
+
+}
 
 
 generateRandomSeed();
 loadHistory();
+
