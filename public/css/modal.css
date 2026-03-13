@@ -1,0 +1,61 @@
+.fallback-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.fallback-modal {
+  background: var(--bg-card);
+  border: 3px solid #c0392b;
+  border-radius: 12px;
+  padding: 24px 32px;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: slideIn 0.25s ease-out;
+}
+
+.fallback-modal p {
+  color: #c0392b;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.fallback-modal .fallback-dismiss {
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  background: #c0392b;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fallback-modal .fallback-dismiss:hover {
+  background: #a93226;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

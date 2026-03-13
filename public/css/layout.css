@@ -1,0 +1,91 @@
+.app {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "sidebar main";
+  grid-template-rows: 1fr;
+  gap: 20px;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: 20px;
+  padding-bottom: 0;
+}
+
+.card {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  transition: background 0.2s;
+  position: relative;
+}
+
+#output {
+  flex: 1 1 auto;
+  min-height: 50vh;
+  background-color: var(--bg-output);
+  border: 1px solid var(--border-subtle);
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow-y: auto;
+}
+
+.story-actions {
+  margin-bottom: 20px;
+}
+
+.controls-box {
+  margin-top: 20px;
+  background: var(--bg-controls);
+  padding: 16px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.controls-box input,
+.controls-box select {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-input);
+  background: var(--bg-output);
+  color: var(--text-primary);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.buttons button,
+.story-actions button {
+  background: var(--link-bg);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.buttons button:hover:not(:disabled),
+.story-actions button:hover {
+  background: var(--link-bg-hover);
+}
+
+.buttons button:disabled,
+.story-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

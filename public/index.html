@@ -4,22 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AI Stories Generator</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./css/variables.css" />
+  <link rel="stylesheet" href="./css/base.css" />
+  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="./css/history.css" />
+  <link rel="stylesheet" href="./css/footer.css" />
+  <link rel="stylesheet" href="./css/modal.css" />
+  <link rel="stylesheet" href="./css/theme-toggle.css" />
 </head>
 <body>
   <div class="app">
-    <!-- Barra lateral -->
     <aside class="history-box expanded" id="historyBox">
       <h3>Story History</h3>
       <ul id="history"></ul>
-      <button id="toggleHistory" class="history-toggle" type="button" aria-label="Expand or collapse history" >« Collapse</button>
+      <button id="toggleHistory" class="history-toggle" type="button" aria-label="Expand or collapse history">« Collapse</button>
     </aside>
 
-    <!-- Contenido principal -->
     <div class="card">
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">Dark mode</button>
       <h1>AI Stories Generator</h1>
 
-      <!-- Historia arriba -->
       <h3>Story</h3>
       <div id="output"><p class="hint">Your story will appear here</p></div>
       <div class="story-actions">
@@ -27,7 +31,6 @@
       </div>
       <div id="stats" class="stats"></div>
 
-      <!-- Controles abajo -->
       <div class="controls-box">
         <label>Choose random words!</label>
         <input id="seed" placeholder="Ex: A violinist in Buenos Aires" />
@@ -45,23 +48,14 @@
     </div>
   </div>
 
-  <script>
-    document.getElementById("toggleHistory")?.addEventListener("click", function(e) {
-      e.preventDefault();
-      var box = document.getElementById("historyBox");
-      var btn = document.getElementById("toggleHistory");
-      if (!box) return;
-      box.classList.toggle("expanded");
-      if (btn) btn.textContent = box.classList.contains("expanded") ? "« Collapse" : "»";
-    });
-  </script>
-  <script src="./main.js"></script>
   <footer class="site-footer">
     <div class="footer-inner">
       <a href="https://alejosworkstuff.github.io/portfolio/">Portfolio</a>
-      <span class="separator">â€¢</span>
+      <span class="separator">•</span>
       <a href="https://github.com/alejosworkstuff">GitHub</a>
     </div>
   </footer>
+
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>

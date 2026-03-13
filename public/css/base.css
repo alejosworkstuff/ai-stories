@@ -1,0 +1,45 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background: var(--bg-body);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.2s, color 0.2s;
+}
+
+input,
+select,
+button,
+textarea {
+  font-family: inherit;
+}
+
+pre {
+  white-space: pre-wrap;
+  background: transparent;
+  padding: 12px 0;
+  border-radius: 6px;
+}
+
+.hint {
+  opacity: 0.7;
+  animation: pulse 1.2s infinite;
+  color: var(--text-primary);
+}
+
+.error-msg {
+  color: var(--error-color) !important;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}

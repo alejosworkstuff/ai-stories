@@ -1,8 +1,10 @@
 {
   "name": "historia-minima",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "test": "node --test tests/*.mjs"
   },
   "dependencies": {
     "replicate": "^1.4.0"

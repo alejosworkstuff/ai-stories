@@ -1,0 +1,33 @@
+.site-footer {
+  margin-top: auto;
+  padding: 20px 0;
+  border-top: 1px solid var(--border-divider);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  position: relative;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.site-footer a {
+  background: var(--link-bg);
+  color: white;
+  padding: 10px 16px;
+  text-decoration: none;
+  border-radius: 6px;
+  display: inline-block;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.site-footer a:hover {
+  background: var(--link-bg-hover);
+}

@@ -28,7 +28,8 @@ The backend exposes a single API route that handles:
 
 - **Vercel Serverless Functions** — API route in `api/`
 - **Replicate API (Llama 3)** — AI text generation
-- **HTML + Vanilla JavaScript** — simple frontend for demo purposes
+- **HTML + Vanilla JavaScript (ES modules)** — modular frontend in `public/js/`
+- **CSS variables** — theming and optional dark mode
 
 ---
 
@@ -39,8 +40,8 @@ This project uses the Replicate API, which may return an HTTP 402 error when no 
 This behavior is explicitly handled:
 
 - The backend returns HTTP 402 with a clear error code.
-- The frontend detects HTTP 402 responses.
-- A human-readable message explains that the AI service is temporarily unavailable due to missing credits.
+- The frontend detects HTTP 402 responses and falls back to a local story generator.
+- A popup (once per session) explains that the AI service is temporarily unavailable.
 
 This ensures the application fails gracefully and predictably, without crashing or producing misleading output.
 
@@ -81,6 +82,13 @@ vercel dev
 http://localhost:3000
 ```
 
+### Scripts
+
+| Command     | Description                |
+| ----------- | -------------------------- |
+| `npm run dev` | Start Vercel dev server  |
+| `npm test`   | Run fallback tests        |
+
 ---
 
 ## Deploy checklist (Vercel)
@@ -88,8 +96,8 @@ http://localhost:3000
 - `REPLICATE_API_TOKEN` added in Vercel project Environment Variables
 - `npm install` succeeds locally
 - `vercel dev` works locally
-- `/api/generate-story` returns `200` for a valid request
-- `/api/generate-story` returns `402` when credits are missing
+- `/api/generate-stories` returns `200` for a valid request
+- `/api/generate-stories` returns `402` when credits are missing
 
 ---
 
@@ -124,7 +132,7 @@ The frontend uses plain HTML and vanilla JavaScript.
 
 ## Trade-offs & limitations
 
-- No persistent storage
+- No server-side persistence (story history uses `localStorage` only)
 - No authentication or user accounts
 - Minimal frontend UI
 
@@ -140,6 +148,12 @@ These trade-offs are intentional to keep the project focused and readable.
 - Authentication and per-user rate limits
 - Streaming AI responses
 - Improved frontend UX
+
+---
+
+## Commit conventions
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for commit message format and conventions (Conventional Commits).
 
 ---
 
