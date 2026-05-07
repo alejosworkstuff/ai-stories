@@ -1,53 +1,96 @@
 # IA Stories Generator
 
-A minimal AI-powered story generator built for Vercel Serverless Functions, using the Llama 3 model via Replicate.
+An AI-assisted story generation app built with Vercel Serverless Functions and Replicate (Llama 3), focused on reliability, graceful degradation, and clear API behavior.
 
-This project is designed as a **portfolio backend-focused application**, emphasizing clarity, decision-making, and robustness over feature count.
-
----
-
-## What it does
-
-The application allows the user to enter:
-
-- a **seed** (keywords or concept),
-- an optional **tone**,
-- a desired **length**,
-
-and generates a coherent short story using an AI language model.
-
-The backend exposes a single API route that handles:
-
-- input validation,
-- AI generation,
-- graceful fallback when credits are unavailable.
+This project is designed as a portfolio piece for AI feature engineering: prompt control, failure handling, and resilient UX when third-party AI services fail.
 
 ---
 
-## Technologies used
+## Problem and Context
 
-- **Vercel Serverless Functions** — API route in `api/`
-- **Replicate API (Llama 3)** — AI text generation
-- **HTML + Vanilla JavaScript (ES modules)** — modular frontend in `public/js/`
-- **CSS variables** — theming and optional dark mode
+AI demos often look good in ideal conditions but break under real-world constraints such as provider limits, missing credits, or unstable outputs.
+
+I built this project to demonstrate production-minded AI integration:
+
+- clear request contracts
+- controlled generation settings (tone and length)
+- explicit error states
+- local fallback behavior when provider credits are unavailable
+
+## My Role
+
+- Designed and implemented the API route for story generation
+- Integrated Replicate model calls and prompt construction
+- Added failure-mode handling for provider errors (especially HTTP 402)
+- Implemented local fallback generation and user-facing fallback messaging
+- Wrote automated tests for fallback behavior
+
+## Architecture Overview
+
+- `api/generate-stories.js`: serverless API endpoint and Replicate integration
+- `public/js/api.js`: client-side request and error handling
+- `public/js/localGenerator.js`: deterministic fallback story generation
+- `public/js/app.js`: orchestration of user input and UI updates
+- `tests/fallback.test.mjs`: automated tests for fallback logic
+
+### Request Flow
+
+1. Client sends `messages`, `tone`, and `length` to `/api/generate-stories`
+2. API validates payload and maps length settings (`short`, `medium`, `long`)
+3. API builds prompt and calls Replicate model
+4. On success, story text is returned with HTTP 200
+5. On known credit errors, API returns HTTP 402 and frontend uses local fallback
 
 ---
 
-## Handling exhausted API credits (HTTP 402)
+## Key Features
 
-This project uses the Replicate API, which may return an HTTP 402 error when no credits are available.
+- AI story continuation based on user seed/messages
+- Tone and length controls for output behavior
+- Explicit HTTP error contracts (`400`, `402`, `405`, `500`)
+- Graceful fallback generator when AI credits are unavailable
+- Session-scoped popup explaining fallback mode
+- Local story history support with `localStorage`
 
-This behavior is explicitly handled:
+## Technical Decisions and Tradeoffs
 
-- The backend returns HTTP 402 with a clear error code.
-- The frontend detects HTTP 402 responses and falls back to a local story generator.
-- A popup (once per session) explains that the AI service is temporarily unavailable.
-
-This ensures the application fails gracefully and predictably, without crashing or producing misleading output.
+- **Serverless route first:** keeps AI secret handling on the backend and simplifies frontend concerns.
+- **Single endpoint design:** easy to reason about and document, though less granular than a multi-endpoint API.
+- **Fallback generator included:** prioritizes reliability and demo continuity over strict AI-only behavior.
+- **Vanilla frontend:** intentional to keep focus on API/AI behavior and avoid framework overhead.
 
 ---
 
-## How to run locally
+## CI / Quality Baseline
+
+GitHub Actions CI runs on pull requests and pushes to `main` with:
+
+- JavaScript syntax checks for API and frontend modules
+- Fallback behavior tests (`node --test`)
+- `.env.example` validation for required keys
+
+Run locally:
+
+```bash
+npm install
+npm run ci
+```
+
+---
+
+## Technologies Used
+
+- Vercel Serverless Functions
+- Replicate API (Llama 3 family)
+- HTML + Vanilla JavaScript (ES modules)
+- Node.js test runner (`node --test`)
+- GitHub Actions (CI)
+
+## Environment Variables
+
+- `REPLICATE_API_TOKEN` (required)
+
+## How to Run Locally
 
 1. Clone the repository:
 
@@ -62,21 +105,21 @@ cd ai-stories
 npm install
 ```
 
-1. Set environment variables:
+1. Configure environment:
 
-Copy `.env.example` to `.env` and set your Replicate token:
+Copy `.env.example` to `.env` and set:
 
 ```env
 REPLICATE_API_TOKEN=your_real_token
 ```
 
-1. Run the Vercel dev server:
+1. Start local dev server:
 
 ```bash
-vercel dev
+npm run dev
 ```
 
-1. Open in your browser:
+1. Open:
 
 ```txt
 http://localhost:3000
@@ -84,84 +127,39 @@ http://localhost:3000
 
 ### Scripts
 
-| Command     | Description                |
-| ----------- | -------------------------- |
-| `npm run dev` | Start Vercel dev server  |
-| `npm test`   | Run fallback tests        |
+- `npm run dev` - start Vercel local development server
+- `npm run test` - run fallback unit tests
+- `npm run ci` - run syntax checks, tests, and env-example validation
 
 ---
 
-## Deploy checklist (Vercel)
+## Deploy Checklist (Vercel)
 
-- `REPLICATE_API_TOKEN` added in Vercel project Environment Variables
-- `npm install` succeeds locally
+- `REPLICATE_API_TOKEN` configured in project environment variables
+- `npm run ci` passes locally
 - `vercel dev` works locally
-- `/api/generate-stories` returns `200` for a valid request
-- `/api/generate-stories` returns `402` when credits are missing
+- `/api/generate-stories` returns:
+  - `200` for valid requests
+  - `402` for exhausted credits scenario
 
 ---
 
-## Environment variables
+## Case Study Highlights (Portfolio Use)
 
-- `REPLICATE_API_TOKEN` → Replicate API token (required)
+- **Challenge:** keep an AI-driven feature reliable even when external provider credits fail.
+- **Approach:** classify error responses and design a predictable fallback path end to end.
+- **Result:** a demo that remains usable, transparent, and technically honest under failure conditions.
 
----
+## What I Would Improve Next
 
-## Technical decisions
-
-### Graceful error handling
-
-When Replicate credits are unavailable, the app returns a clear, predictable error response.
-
-#### Why graceful error handling?
-
-- The frontend does not break.
-- The behavior is explicit and documented.
-- It keeps the demo usable even without paid credits.
-
-### Frontend simplicity
-
-The frontend uses plain HTML and vanilla JavaScript.
-
-#### Why frontend simplicity?
-
-- The focus of this project is backend logic and API design.
-- Avoids framework overhead for a simple demo UI.
+- Add strict request schema validation
+- Add provider retry strategy with timeout controls
+- Add basic rate limiting and abuse protection
+- Add metrics for request latency, fallback rate, and error categories
+- Add streaming response support
 
 ---
 
-## Trade-offs & limitations
+## Commit Conventions
 
-- No server-side persistence (story history uses `localStorage` only)
-- No authentication or user accounts
-- Minimal frontend UI
-
-These trade-offs are intentional to keep the project focused and readable.
-
----
-
-## Possible future improvements
-
-- Add caching with TTL (Redis or database)
-- Model selector (cost vs quality)
-- Text type selector (story, poem, micro-fiction)
-- Authentication and per-user rate limits
-- Streaming AI responses
-- Improved frontend UX
-
----
-
-## Commit conventions
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for commit message format and conventions (Conventional Commits).
-
----
-
-## Project status
-
-This project is considered complete for portfolio purposes, showcasing:
-
-- clear API design
-- defensive backend programming
-- explicit technical decisions
-- realistic handling of third-party AI limitations
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for commit message format and conventions.
