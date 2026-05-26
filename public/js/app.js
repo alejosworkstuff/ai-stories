@@ -20,6 +20,10 @@ const ELEMENTS = {
   seedEl: document.getElementById("seed"),
   toneEl: document.getElementById("tone"),
   lengthEl: document.getElementById("length"),
+  lengthDropdown: document.getElementById("lengthDropdown"),
+  lengthToggle: document.getElementById("lengthToggle"),
+  lengthValue: document.getElementById("lengthValue"),
+  lengthOptions: document.getElementById("lengthOptions"),
   out: document.getElementById("output"),
   copyBtn: document.getElementById("copyBtn"),
   stats: document.getElementById("stats"),
@@ -140,6 +144,28 @@ function onSelectStory(story) {
   });
 }
 
+function setLengthDropdownOpen(isOpen) {
+  ELEMENTS.lengthDropdown?.classList.toggle("is-open", isOpen);
+  ELEMENTS.lengthToggle?.setAttribute("aria-expanded", String(isOpen));
+}
+
+function selectLengthOption(optionButton) {
+  const value = optionButton.dataset.value;
+  if (!value || !ELEMENTS.lengthEl || !ELEMENTS.lengthValue || !ELEMENTS.lengthOptions) return;
+
+  ELEMENTS.lengthEl.value = value;
+  ELEMENTS.lengthValue.textContent = optionButton.textContent;
+
+  ELEMENTS.lengthOptions.querySelectorAll("[role='option']").forEach((option) => {
+    option.setAttribute(
+      "aria-selected",
+      String(option.contains(optionButton))
+    );
+  });
+
+  setLengthDropdownOpen(false);
+}
+
 function init() {
   initDarkMode(ELEMENTS.themeToggle);
   generateRandomSeed();
@@ -151,14 +177,33 @@ function bindEvents() {
   ELEMENTS.regenBtn?.addEventListener("click", generateStory);
   ELEMENTS.copyBtn?.addEventListener("click", copyStory);
   ELEMENTS.themeToggle?.addEventListener("click", () => toggleDarkMode(ELEMENTS.themeToggle));
+  ELEMENTS.lengthToggle?.addEventListener("click", () => {
+    const isOpen = ELEMENTS.lengthDropdown?.classList.contains("is-open");
+    setLengthDropdownOpen(!isOpen);
+  });
+  ELEMENTS.lengthOptions?.addEventListener("click", (e) => {
+    const optionButton = e.target.closest("button[data-value]");
+    if (optionButton) selectLengthOption(optionButton);
+  });
+  document.addEventListener("click", (e) => {
+    if (!ELEMENTS.lengthDropdown?.contains(e.target)) {
+      setLengthDropdownOpen(false);
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") setLengthDropdownOpen(false);
+  });
 
   ELEMENTS.historyToggleBtn?.addEventListener("click", (e) => {
     e.preventDefault();
     ELEMENTS.historyBox?.classList.toggle("expanded");
     if (ELEMENTS.historyToggleBtn) {
-      ELEMENTS.historyToggleBtn.textContent = ELEMENTS.historyBox?.classList.contains("expanded")
-        ? "« Collapse"
-        : "»";
+      const isExpanded = ELEMENTS.historyBox?.classList.contains("expanded");
+      ELEMENTS.historyToggleBtn.textContent = isExpanded ? "Collapse" : ">";
+      ELEMENTS.historyToggleBtn.setAttribute(
+        "aria-label",
+        isExpanded ? "Collapse history" : "Expand history"
+      );
     }
   });
 

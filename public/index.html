@@ -17,7 +17,7 @@
     <aside class="history-box expanded" id="historyBox">
       <h3>Story History</h3>
       <ul id="history"></ul>
-      <button id="toggleHistory" class="history-toggle" type="button" aria-label="Expand or collapse history">« Collapse</button>
+      <button id="toggleHistory" class="history-toggle" type="button" aria-label="Collapse history">Collapse</button>
     </aside>
 
     <div class="card">
@@ -35,11 +35,31 @@
         <label>Choose random words!</label>
         <input id="seed" placeholder="Ex: A violinist in Buenos Aires" />
         <input id="tone" placeholder="Choose genre or tone (ex: romantic cyberpunk)" />
-        <select id="length">
-          <option value="short">Short</option>
-          <option value="medium">Medium</option>
-          <option value="long">Large</option>
-        </select>
+        <input id="length" type="hidden" value="short" />
+        <div class="custom-select" id="lengthDropdown">
+          <button
+            id="lengthToggle"
+            class="custom-select__button"
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="lengthOptions"
+          >
+            <span id="lengthValue">Short</span>
+            <span class="custom-select__arrow" aria-hidden="true">v</span>
+          </button>
+          <ul class="custom-select__list" id="lengthOptions" role="listbox" aria-label="Story length">
+            <li role="option" aria-selected="true">
+              <button type="button" data-value="short">Short</button>
+            </li>
+            <li role="option" aria-selected="false">
+              <button type="button" data-value="medium">Medium</button>
+            </li>
+            <li role="option" aria-selected="false">
+              <button type="button" data-value="long">Large</button>
+            </li>
+          </ul>
+        </div>
         <div class="buttons">
           <button id="btn">Create</button>
           <button id="regenBtn">Regenerate</button>
