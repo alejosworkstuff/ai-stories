@@ -31,7 +31,10 @@ I built this project to demonstrate production-minded AI integration:
 - `public/js/api.js`: client-side request and error handling
 - `public/js/localGenerator.js`: deterministic fallback story generation
 - `public/js/app.js`: orchestration of user input and UI updates
+- `public/css/layout.css`: responsive layout and custom length selector styling
+- `public/css/history.css`: collapsible local history sidebar behavior
 - `tests/fallback.test.mjs`: automated tests for fallback logic
+- `tests/generate-stories-api.test.mjs`: API helper and handler tests
 
 ### Request Flow
 
@@ -51,6 +54,11 @@ I built this project to demonstrate production-minded AI integration:
 - Graceful fallback generator when AI credits are unavailable
 - Session-scoped popup explaining fallback mode
 - Local story history support with `localStorage`
+- Collapsible story history panel
+- Custom length selector for short, medium, and long stories
+- Copy-to-clipboard support for generated stories
+- Dark mode toggle
+- Animated footer links for portfolio, GitHub, and LinkedIn
 
 ## Technical Decisions and Tradeoffs
 
@@ -58,6 +66,7 @@ I built this project to demonstrate production-minded AI integration:
 - **Single endpoint design:** easy to reason about and document, though less granular than a multi-endpoint API.
 - **Fallback generator included:** prioritizes reliability and demo continuity over strict AI-only behavior.
 - **Vanilla frontend:** intentional to keep focus on API/AI behavior and avoid framework overhead.
+- **Custom controls:** replace default browser UI only where it improves polish while keeping simple, accessible state.
 
 ---
 
@@ -67,7 +76,10 @@ GitHub Actions CI runs on pull requests and pushes to `main` with:
 
 - JavaScript syntax checks for API and frontend modules
 - Fallback behavior tests (`node --test`)
+- API helper and handler behavior tests
 - `.env.example` validation for required keys
+
+Note: the CI workflow is fully configured. If GitHub Actions appears as "not started," it may be due to temporary account billing restrictions on hosted runners; the same checks still run locally via `npm run ci`.
 
 Run locally:
 
