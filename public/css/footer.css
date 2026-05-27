@@ -52,12 +52,9 @@ body {
   isolation: isolate;
 }
 
-.portfolio-link:hover,
 .portfolio-link:focus-visible {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.32);
-  border-color: transparent;
-  color: #ffffff;
+  outline: 2px solid var(--link-bg);
+  outline-offset: 2px;
 }
 
 .social-bubble {
@@ -81,10 +78,9 @@ body {
   transition: transform 260ms ease, box-shadow 320ms ease;
 }
 
-.social-bubble:hover,
 .social-bubble:focus-visible {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
+  outline: 2px solid var(--link-bg);
+  outline-offset: 2px;
 }
 
 .portfolio-link::before,
@@ -127,21 +123,6 @@ body {
   filter: blur(8px) saturate(130%);
 }
 
-.portfolio-link:hover::before,
-.portfolio-link:focus-visible::before {
-  opacity: 0.98;
-  transform: translateY(0) scale(1.04);
-  animation: lava-breathe 2.6s ease-in-out infinite;
-}
-
-.social-bubble:hover::before,
-.social-bubble:hover::after,
-.social-bubble:focus-visible::before,
-.social-bubble:focus-visible::after {
-  opacity: 0.98;
-  transform: translateY(0) scale(1.06);
-  animation: lava-swirl 2.9s linear infinite;
-}
 
 .social-github {
   --lava-a: #161b22;
@@ -165,10 +146,40 @@ body {
   transition: transform 520ms cubic-bezier(0.2, 0.86, 0.38, 0.99), filter 240ms ease;
 }
 
-.social-bubble:hover .social-icon,
 .social-bubble:focus-visible .social-icon {
-  transform: rotate(360deg) scale(1.07);
   filter: brightness(0) invert(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .portfolio-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px rgba(37, 99, 235, 0.32);
+    border-color: transparent;
+    color: #ffffff;
+  }
+
+  .social-bubble:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
+  }
+
+  .portfolio-link:hover::before {
+    opacity: 0.98;
+    transform: translateY(0) scale(1.04);
+    animation: lava-breathe 2.6s ease-in-out infinite;
+  }
+
+  .social-bubble:hover::before,
+  .social-bubble:hover::after {
+    opacity: 0.98;
+    transform: translateY(0) scale(1.06);
+    animation: lava-swirl 2.9s linear infinite;
+  }
+
+  .social-bubble:hover .social-icon {
+    transform: rotate(360deg) scale(1.07);
+    filter: brightness(0) invert(1);
+  }
 }
 
 @keyframes lava-swirl {

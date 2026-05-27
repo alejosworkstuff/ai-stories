@@ -13,6 +13,13 @@
   transition: background 0.2s, color 0.2s;
 }
 
+@media (max-width: 860px) {
+  .theme-toggle {
+    top: 120px;
+    right: 18px;
+  }
+}
+
 .theme-toggle:hover {
   background: var(--btn-secondary-hover);
   color: var(--text-button-hover);

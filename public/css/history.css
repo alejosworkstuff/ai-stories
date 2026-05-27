@@ -82,3 +82,63 @@
 .history-box li:hover {
   background: var(--history-hover);
 }
+
+@media (max-width: 860px) {
+  .history-box,
+  .history-box.expanded,
+  .history-box:not(.expanded) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .history-box {
+    overflow: hidden;
+    max-height: 320px;
+    transition:
+      max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+      padding 0.25s ease;
+  }
+
+  .history-box h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    max-height: 48px;
+    opacity: 1;
+    transition:
+      max-height 0.25s ease,
+      opacity 0.2s ease,
+      margin 0.25s ease,
+      padding 0.25s ease;
+  }
+
+  .history-box ul {
+    max-height: 220px;
+    opacity: 1;
+    overflow: auto;
+    transition:
+      max-height 0.3s ease,
+      opacity 0.2s ease;
+  }
+
+  .history-box:not(.expanded) {
+    max-height: 56px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .history-box:not(.expanded) h3 {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .history-box:not(.expanded) ul {
+    display: block;
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+}

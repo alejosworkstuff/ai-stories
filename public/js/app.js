@@ -199,7 +199,8 @@ function bindEvents() {
     ELEMENTS.historyBox?.classList.toggle("expanded");
     if (ELEMENTS.historyToggleBtn) {
       const isExpanded = ELEMENTS.historyBox?.classList.contains("expanded");
-      ELEMENTS.historyToggleBtn.textContent = isExpanded ? "Collapse" : ">";
+      ELEMENTS.historyToggleBtn.textContent = isExpanded ? "Collapse" : "Expand";
+      ELEMENTS.historyToggleBtn.setAttribute("aria-expanded", String(isExpanded));
       ELEMENTS.historyToggleBtn.setAttribute(
         "aria-label",
         isExpanded ? "Collapse history" : "Expand history"
