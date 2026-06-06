@@ -162,10 +162,24 @@ http://localhost:3000
 - **Approach:** classify error responses and design a predictable fallback path end to end.
 - **Result:** a demo that remains usable, transparent, and technically honest under failure conditions.
 
+## HTTP resilience (client)
+
+- `public/js/http.js` — timeout via `AbortController`, retry on `429`/`502`/`503`, `HttpError` and `normalizeApiError()`
+- `public/js/api.js` — story requests use `fetchWithResilience()`
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| Story always uses local fallback | Browser network tab: `/api/generate-stories` status `402` means Replicate credits; set `REPLICATE_API_TOKEN` on Vercel |
+| Request timed out | Default 8s client timeout; slow model or cold start — retry or use shorter length |
+| `405` on API | POST only; verify `vercel dev` and route `api/generate-stories.js` |
+| `500` with JSON error | Server logs in Vercel dashboard; invalid token or Replicate outage |
+| Tests fail on `http.test.mjs` | Run `npm test` from project root; Node 20+ required |
+
 ## What I Would Improve Next
 
 - Add strict request schema validation
-- Add provider retry strategy with timeout controls
 - Add basic rate limiting and abuse protection
 - Add metrics for request latency, fallback rate, and error categories
 - Add streaming response support
