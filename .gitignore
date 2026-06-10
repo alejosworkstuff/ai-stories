@@ -23,6 +23,9 @@ build/
 
 # Coverage / tests
 coverage/
+test-results/
+playwright-report/
+blob-report/
 
 # Editor / OS
 .vscode/

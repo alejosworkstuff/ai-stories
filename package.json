@@ -5,11 +5,17 @@
   "scripts": {
     "dev": "vercel dev",
     "test": "node --test tests/*.mjs",
+    "test:e2e": "playwright test",
     "check:syntax": "node --check api/generate-stories.js && node --check public/js/http.js && node --check public/js/api.js && node --check public/js/app.js && node --check public/js/localGenerator.js",
     "check:env-example": "node scripts/validate-env-example.mjs",
-    "ci": "npm run check:syntax && npm run test && npm run check:env-example"
+    "ci": "npm run check:syntax && npm run test && npm run check:env-example",
+    "ci:full": "npm run ci && npm run test:e2e"
   },
   "dependencies": {
     "replicate": "^1.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "serve": "^14.2.4"
   }
 }
