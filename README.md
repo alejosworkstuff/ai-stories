@@ -4,6 +4,12 @@ An AI-assisted story generation app built with Vercel Serverless Functions and R
 
 This project is designed as a portfolio piece for AI feature engineering: prompt control, failure handling, and resilient UX when third-party AI services fail.
 
+## Screenshots
+
+| Main form | Fallback mode | Dark mode |
+|:---:|:---:|:---:|
+| ![Main form](./docs/screenshots/main.png) | ![Fallback mode](./docs/screenshots/fallback.png) | ![Dark mode](./docs/screenshots/dark.png) |
+
 ---
 
 ## Problem and Context
