@@ -2,6 +2,15 @@
   "name": "historia-minima",
   "version": "1.0.0",
   "type": "module",
+  "homepage": "https://ai-stories-ashy.vercel.app",
+  "keywords": [
+    "portfolio",
+    "javascript",
+    "typescript",
+    "nodejs",
+    "ai",
+    "replicate"
+  ],
   "scripts": {
     "dev": "vercel dev",
     "test": "node --test tests/*.mjs",
