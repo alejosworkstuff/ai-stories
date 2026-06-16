@@ -23,6 +23,9 @@ export function normalizeApiError(status, body = {}) {
   if (status === 400) {
     return { code: "VALIDATION", message: body.error ?? "Invalid request" };
   }
+  if (status === 429) {
+    return { code: "RATE_LIMIT", message: body.error ?? "Too many requests" };
+  }
   if (status >= 500) {
     return { code: "SERVER", message: body.error ?? "Server error" };
   }

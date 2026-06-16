@@ -1,4 +1,6 @@
 import Replicate from "replicate";
+import { createRateLimiter } from "./rate-limit.js";
+import { validateGenerateRequest } from "./validate.js";
 
 const lengthSettings = {
   short: { maxTokens: 300, paragraphs: 3 },
@@ -38,18 +40,27 @@ export function isReplicateCreditsError(error) {
   );
 }
 
-export function createHandler(replicateClient) {
+export function createHandler(replicateClient, options = {}) {
+  const rateLimiter = options.rateLimiter ?? createRateLimiter();
+
   return async function handler(req, res) {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "method_not_allowed" });
     }
 
-    const { messages, tone = "neutral", length = "short" } = req.body || {};
-
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ error: "messages_required" });
+    const rateLimit = rateLimiter.check(req);
+    res.setHeader("X-RateLimit-Remaining", String(rateLimit.remaining));
+    if (!rateLimit.allowed) {
+      res.setHeader("Retry-After", String(rateLimit.retryAfterSec));
+      return res.status(429).json({ error: "rate_limit_exceeded" });
     }
 
+    const validationError = validateGenerateRequest(req.body);
+    if (validationError) {
+      return res.status(400).json(validationError);
+    }
+
+    const { messages, tone = "neutral", length = "short" } = req.body;
     const settings = getLengthSettings(length);
     const prompt = buildPrompt(messages, tone, settings.paragraphs);
 
@@ -66,16 +77,11 @@ export function createHandler(replicateClient) {
       return res.status(200).json({ output: story });
     } catch (err) {
       if (isReplicateCreditsError(err)) {
-        return res.status(402).json({
-          error: "replicate_no_credits",
-          details: err.message,
-        });
+        return res.status(402).json({ error: "replicate_no_credits" });
       }
 
-      return res.status(500).json({
-        error: "replicate_failed",
-        details: err.message,
-      });
+      console.error("replicate_failed", err);
+      return res.status(500).json({ error: "replicate_failed" });
     }
   };
 }
