@@ -28,4 +28,50 @@ test("generate a story and see output, stats, and history", async ({ page }) => 
   await expect(page.locator("#stats")).toContainText("Words:");
   await expect(page.getByRole("button", { name: "Copy story" })).toBeVisible();
   await expect(page.locator("#history li").first()).toContainText("violinist");
+  await expect(page.locator("#continueBtn")).toBeEnabled();
+});
+
+test("continue a story appends the next part", async ({ page }) => {
+  const continuation =
+    "The violinist followed the melody into a hidden alley.\n\nNeon reflected off wet cobblestones.";
+
+  let requestCount = 0;
+  await page.unroute("**/api/generate-stories");
+  await page.route("**/api/generate-stories", async (route) => {
+    requestCount += 1;
+    const body = route.request().postDataJSON();
+
+    if (requestCount === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ output: MOCK_STORY }),
+      });
+      return;
+    }
+
+    expect(body.messages.length).toBeGreaterThan(1);
+    expect(body.messages.at(-1)).toMatchObject({
+      role: "user",
+      content: "Add a mysterious stranger.",
+    });
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ output: continuation }),
+    });
+  });
+
+  await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.locator("#output pre")).toContainText("violinist in Buenos Aires");
+
+  await page.locator("#continuePrompt").fill("Add a mysterious stranger.");
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  await expect(page.locator("#output pre")).toContainText("hidden alley", {
+    timeout: 15_000,
+  });
+  await expect(page.locator("#output pre")).toContainText("violinist in Buenos Aires");
 });

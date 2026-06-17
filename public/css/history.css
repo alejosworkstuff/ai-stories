@@ -25,9 +25,11 @@
 }
 
 .history-box:not(.expanded) .history-toggle {
-  font-size: 1.2rem;
   padding: 12px 8px;
-  line-height: 1;
+}
+
+.history-box:not(.expanded) .history-toggle__label {
+  display: none;
 }
 
 .history-box h3 {
@@ -63,7 +65,19 @@
   transition: background 0.2s, color 0.2s;
   flex-shrink: 0;
   width: 100%;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.history-toggle__icon {
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.history-box:not(.expanded) .history-toggle__icon {
+  transform: rotate(180deg);
 }
 
 .history-toggle:hover {

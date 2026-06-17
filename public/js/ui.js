@@ -89,8 +89,9 @@ export function showFallbackModal(message) {
   document.body.appendChild(overlay);
 }
 
-export function setLoading(isLoading, { btn, regenBtn }) {
+export function setLoading(isLoading, { btn, regenBtn, continueBtn }) {
   if (btn) btn.disabled = isLoading;
   if (regenBtn) regenBtn.disabled = isLoading;
+  if (continueBtn) continueBtn.disabled = isLoading;
   if (btn) btn.textContent = isLoading ? "Generating..." : "Create";
 }

@@ -24,7 +24,10 @@
         aria-label="Collapse history"
         aria-expanded="true"
       >
-        Collapse
+        <svg class="history-toggle__icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <path fill="currentColor" d="M10 3L5 8l5 5" />
+        </svg>
+        <span class="history-toggle__label">Collapse</span>
       </button>
     </aside>
 
@@ -68,9 +71,14 @@
             </li>
           </ul>
         </div>
+        <input
+          id="continuePrompt"
+          placeholder="Optional: guide the next part (ex: a sudden betrayal)"
+        />
         <div class="buttons">
           <button id="btn">Create</button>
           <button id="regenBtn">Regenerate</button>
+          <button id="continueBtn" disabled>Continue</button>
         </div>
       </div>
     </div>

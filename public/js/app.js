@@ -24,6 +24,8 @@ const ELEMENTS = {
   lengthToggle: document.getElementById("lengthToggle"),
   lengthValue: document.getElementById("lengthValue"),
   lengthOptions: document.getElementById("lengthOptions"),
+  continuePromptEl: document.getElementById("continuePrompt"),
+  continueBtn: document.getElementById("continueBtn"),
   out: document.getElementById("output"),
   copyBtn: document.getElementById("copyBtn"),
   stats: document.getElementById("stats"),
@@ -42,20 +44,75 @@ function generateRandomSeed() {
   if (ELEMENTS.seedEl) ELEMENTS.seedEl.value = RANDOM_SEEDS[randomIndex];
 }
 
-async function generateStory() {
+function getStoryText() {
+  return messages
+    .filter((message) => message.role === "assistant")
+    .map((message) => message.content)
+    .join("\n\n");
+}
+
+function hasActiveConversation() {
+  return messages.some((message) => message.role === "assistant");
+}
+
+function setContinueEnabled(enabled) {
+  if (!ELEMENTS.continueBtn) return;
+  ELEMENTS.continueBtn.disabled = !enabled;
+}
+
+function renderCurrentStory() {
+  const story = getStoryText();
+  renderStory(story, {
+    outputEl: ELEMENTS.out,
+    copyBtn: ELEMENTS.copyBtn,
+    statsEl: ELEMENTS.stats,
+    updateStats: (text) => updateStats(text, ELEMENTS.stats),
+  });
+  saveStory(story);
+  loadHistory(ELEMENTS.historyEl);
+  setContinueEnabled(hasActiveConversation());
+}
+
+async function runStoryRequest({ isContinuation }) {
   const seed = (ELEMENTS.seedEl?.value ?? "").trim();
   const tone = (ELEMENTS.toneEl?.value ?? "").trim();
   const length = ELEMENTS.lengthEl?.value ?? "short";
 
-  setLoading(true, { btn: ELEMENTS.btn, regenBtn: ELEMENTS.regenBtn });
+  setLoading(true, {
+    btn: ELEMENTS.btn,
+    regenBtn: ELEMENTS.regenBtn,
+    continueBtn: ELEMENTS.continueBtn,
+  });
 
-  if (!seed) {
-    renderError("Put a seed.", ELEMENTS.out);
-    setLoading(false, { btn: ELEMENTS.btn, regenBtn: ELEMENTS.regenBtn });
-    return;
+  if (isContinuation) {
+    if (!hasActiveConversation()) {
+      renderError("Create a story first.", ELEMENTS.out);
+      setLoading(false, {
+        btn: ELEMENTS.btn,
+        regenBtn: ELEMENTS.regenBtn,
+        continueBtn: ELEMENTS.continueBtn,
+      });
+      return;
+    }
+
+    const prompt =
+      (ELEMENTS.continuePromptEl?.value ?? "").trim() || "Continue the story.";
+    messages.push({ role: "user", content: prompt });
+  } else {
+    if (!seed) {
+      renderError("Put a seed.", ELEMENTS.out);
+      setLoading(false, {
+        btn: ELEMENTS.btn,
+        regenBtn: ELEMENTS.regenBtn,
+        continueBtn: ELEMENTS.continueBtn,
+      });
+      return;
+    }
+
+    messages = [{ role: "user", content: seed }];
+    setContinueEnabled(false);
   }
 
-  messages = [{ role: "user", content: seed }];
   renderGenerating(ELEMENTS.out);
 
   const controller = new AbortController();
@@ -66,15 +123,11 @@ async function generateStory() {
       fallbackPopupShown = true;
       showFallbackModal(message);
     }
-    const story = generateLocalStory(seed, tone, length);
-    renderStory(story, {
-      outputEl: ELEMENTS.out,
-      copyBtn: ELEMENTS.copyBtn,
-      statsEl: ELEMENTS.stats,
-      updateStats: (text) => updateStats(text, ELEMENTS.stats),
-    });
-    saveStory(story);
-    loadHistory(ELEMENTS.historyEl);
+
+    const storySeed = seed || messages[0]?.content || "the story";
+    const newPart = generateLocalStory(storySeed, tone, length);
+    messages.push({ role: "assistant", content: newPart });
+    renderCurrentStory();
   }
 
   try {
@@ -104,20 +157,33 @@ async function generateStory() {
     }
 
     messages.push({ role: "assistant", content: story });
-    renderStory(story, {
-      outputEl: ELEMENTS.out,
-      copyBtn: ELEMENTS.copyBtn,
-      statsEl: ELEMENTS.stats,
-      updateStats: (text) => updateStats(text, ELEMENTS.stats),
-    });
-    saveStory(story);
-    loadHistory(ELEMENTS.historyEl);
+    if (isContinuation && ELEMENTS.continuePromptEl) {
+      ELEMENTS.continuePromptEl.value = "";
+    }
+    renderCurrentStory();
   } catch {
     clearTimeout(timeoutId);
     useLocalFallback("Using local generator");
   } finally {
-    setLoading(false, { btn: ELEMENTS.btn, regenBtn: ELEMENTS.regenBtn });
+    setLoading(false, {
+      btn: ELEMENTS.btn,
+      regenBtn: ELEMENTS.regenBtn,
+      continueBtn: ELEMENTS.continueBtn,
+    });
+    setContinueEnabled(hasActiveConversation());
   }
+}
+
+async function createStory() {
+  await runStoryRequest({ isContinuation: false });
+}
+
+async function regenerateStory() {
+  await runStoryRequest({ isContinuation: false });
+}
+
+async function continueStory() {
+  await runStoryRequest({ isContinuation: true });
 }
 
 async function copyStory() {
@@ -136,12 +202,18 @@ async function copyStory() {
 }
 
 function onSelectStory(story) {
+  const seed = (ELEMENTS.seedEl?.value ?? "").trim() || "Restored story";
+  messages = [
+    { role: "user", content: seed },
+    { role: "assistant", content: story },
+  ];
   renderStory(story, {
     outputEl: ELEMENTS.out,
     copyBtn: ELEMENTS.copyBtn,
     statsEl: ELEMENTS.stats,
     updateStats: (text) => updateStats(text, ELEMENTS.stats),
   });
+  setContinueEnabled(true);
 }
 
 function setLengthDropdownOpen(isOpen) {
@@ -170,11 +242,13 @@ function init() {
   initDarkMode(ELEMENTS.themeToggle);
   generateRandomSeed();
   loadHistory(ELEMENTS.historyEl);
+  setContinueEnabled(false);
 }
 
 function bindEvents() {
-  ELEMENTS.btn?.addEventListener("click", generateStory);
-  ELEMENTS.regenBtn?.addEventListener("click", generateStory);
+  ELEMENTS.btn?.addEventListener("click", createStory);
+  ELEMENTS.regenBtn?.addEventListener("click", regenerateStory);
+  ELEMENTS.continueBtn?.addEventListener("click", continueStory);
   ELEMENTS.copyBtn?.addEventListener("click", copyStory);
   ELEMENTS.themeToggle?.addEventListener("click", () => toggleDarkMode(ELEMENTS.themeToggle));
   ELEMENTS.lengthToggle?.addEventListener("click", () => {
@@ -197,24 +271,24 @@ function bindEvents() {
   ELEMENTS.historyToggleBtn?.addEventListener("click", (e) => {
     e.preventDefault();
     ELEMENTS.historyBox?.classList.toggle("expanded");
-    if (ELEMENTS.historyToggleBtn) {
-      const isExpanded = ELEMENTS.historyBox?.classList.contains("expanded");
-      ELEMENTS.historyToggleBtn.textContent = isExpanded ? "Collapse" : "Expand";
-      ELEMENTS.historyToggleBtn.setAttribute("aria-expanded", String(isExpanded));
-      ELEMENTS.historyToggleBtn.setAttribute(
-        "aria-label",
-        isExpanded ? "Collapse history" : "Expand history"
-      );
-    }
+    const isExpanded = ELEMENTS.historyBox?.classList.contains("expanded");
+    ELEMENTS.historyToggleBtn?.setAttribute("aria-expanded", String(isExpanded));
+    ELEMENTS.historyToggleBtn?.setAttribute(
+      "aria-label",
+      isExpanded ? "Collapse history" : "Expand history"
+    );
   });
 
   handleHistoryClick(ELEMENTS.historyEl, onSelectStory);
 
   ELEMENTS.seedEl?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") generateStory();
+    if (e.key === "Enter") createStory();
   });
   ELEMENTS.toneEl?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") generateStory();
+    if (e.key === "Enter") createStory();
+  });
+  ELEMENTS.continuePromptEl?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && hasActiveConversation()) continueStory();
   });
 }
 
