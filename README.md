@@ -8,7 +8,7 @@ This project is designed as a portfolio piece for AI feature engineering: prompt
 
 | Main form | Fallback mode | Dark mode |
 |:---:|:---:|:---:|
-| ![Main form](./docs/screenshots/main.png) | ![Fallback mode](./docs/screenshots/fallback.png) | ![Dark mode](./docs/screenshots/dark.png) |
+| ![Main form](./docs/screenshots/main.webp) | ![Fallback mode](./docs/screenshots/fallback.webp) | ![Dark mode](./docs/screenshots/dark.webp) |
 
 ---
 
