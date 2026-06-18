@@ -15,7 +15,7 @@
     "dev": "vercel dev",
     "test": "node --test tests/*.mjs",
     "test:e2e": "playwright test",
-    "check:syntax": "node --check api/generate-stories.js && node --check api/rate-limit.js && node --check api/validate.js && node --check public/js/http.js && node --check public/js/api.js && node --check public/js/app.js && node --check public/js/localGenerator.js",
+    "check:syntax": "node --check api/generate-stories.js && node --check api/rate-limit.js && node --check api/validate.js && node --check public/js/http.js && node --check public/js/api.js && node --check public/js/app.js && node --check public/js/localGenerator.js && node --check public/js/ui.js && node --check public/js/theme.js && node --check public/js/storage.js && node --check public/js/constants.js && node --check public/js/utils.js",
     "check:env-example": "node scripts/validate-env-example.mjs",
     "ci": "npm run check:syntax && npm run test && npm run check:env-example",
     "ci:full": "npm run ci && npm run test:e2e"
