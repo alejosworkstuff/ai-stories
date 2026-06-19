@@ -1,5 +1,7 @@
 # IA Stories Generator
 
+[![local CI](https://img.shields.io/badge/local%20CI-passing-brightgreen?logo=github-actions&logoColor=white)](.github/workflows/ci.yml) [![Vercel](https://img.shields.io/badge/deployed-Vercel-black?logo=vercel&logoColor=white)](https://ai-stories-ashy.vercel.app/)
+
 An AI-assisted story generation app built with Vercel Serverless Functions and Replicate (Llama 3), focused on reliability, graceful degradation, and clear API behavior.
 
 This project is designed as a portfolio piece for AI feature engineering: prompt control, failure handling, and resilient UX when third-party AI services fail.
