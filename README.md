@@ -87,7 +87,7 @@ GitHub Actions CI runs on pull requests and pushes to `main` with:
 - API helper and handler behavior tests
 - `.env.example` validation for required keys
 
-Note: the CI workflow is fully configured. If GitHub Actions appears as "not started," it may be due to temporary account billing restrictions on hosted runners; the same checks still run locally via `npm run ci`.
+The CI workflow runs on GitHub Actions on every push and pull request. The same checks also run locally via `npm run ci`.
 
 Run locally:
 
