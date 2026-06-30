@@ -41,6 +41,10 @@
   margin-bottom: 20px;
 }
 
+#copyBtn {
+  display: none;
+}
+
 .controls-box {
   margin-top: 20px;
   background: var(--bg-controls);

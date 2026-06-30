@@ -78,6 +78,24 @@ I built this project to demonstrate production-minded AI integration:
 
 ---
 
+## Security Headers
+
+Security headers are applied to every response via `vercel.json`:
+
+| Header | Value | Purpose |
+| --- | --- | --- |
+| `Content-Security-Policy` | `default-src 'self'` (no `unsafe-inline`/`unsafe-eval`); `connect-src 'self'`; `object-src 'none'`; `frame-ancestors 'none'`; `upgrade-insecure-requests` | Locks scripts/styles/connections to same-origin and blocks injection, clickjacking, and mixed content |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains` | Forces HTTPS |
+| `X-Content-Type-Options` | `nosniff` | Blocks MIME sniffing |
+| `X-Frame-Options` | `DENY` | Clickjacking defense for legacy browsers (mirrors `frame-ancestors`) |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Limits referrer leakage |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), browsing-topics=()` | Disables unused powerful features |
+| `Cross-Origin-Opener-Policy` | `same-origin` | Isolates the browsing context |
+
+The CSP is strict (`script-src 'self'`, `style-src 'self'`) because the frontend uses external ES modules and stylesheets with no inline `<script>`, inline event handlers, or inline `style` attributes.
+
+---
+
 ## CI / Quality Baseline
 
 GitHub Actions CI runs on pull requests and pushes to `main` with:
@@ -161,6 +179,7 @@ http://localhost:3000
 - `/api/generate-stories` returns:
   - `200` for valid requests
   - `402` for exhausted credits scenario
+- Security headers present on responses (verify `Content-Security-Policy` via `curl -I https://ai-stories-ashy.vercel.app/` after deploy)
 
 ---
 
