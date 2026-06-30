@@ -107,6 +107,8 @@ GitHub Actions CI runs on pull requests and pushes to `main` with:
 
 The CI workflow runs on GitHub Actions on every push and pull request. The same checks also run locally via `npm run ci`.
 
+`main` is protected: the `quality-checks` job is a **required status check**, so a pull request cannot be merged until CI is green. Every pull request also gets an automatic **Vercel preview deployment** via the Vercel ↔ GitHub integration.
+
 Run locally:
 
 ```bash
