@@ -2,6 +2,7 @@ import { whenReady } from "./utils.js";
 import { RANDOM_SEEDS } from "./constants.js";
 import { getStories, saveStory } from "./storage.js";
 import { requestStory } from "./api.js";
+import { normalizeApiError } from "./http.js";
 import { generateLocalStory } from "./localGenerator.js";
 import { initDarkMode, toggleDarkMode } from "./theme.js";
 import {
@@ -38,6 +39,14 @@ const ELEMENTS = {
 
 let messages = [];
 let fallbackPopupShown = false;
+
+const FALLBACK_MESSAGE = {
+  CREDITS: "Out of credits - generating fallback story",
+  RATE_LIMIT: "Too many requests - using local generator",
+  VALIDATION: "Invalid request - using local generator",
+  SERVER: "AI service error - using local generator",
+  HTTP: "AI unavailable - using local generator",
+};
 
 function generateRandomSeed() {
   const randomIndex = Math.floor(Math.random() * RANDOM_SEEDS.length);
@@ -145,14 +154,10 @@ async function runStoryRequest({ isContinuation }) {
     }
 
     const story = String(data?.output ?? "");
-    const isOutOfCredits = res.status === 402;
 
     if (!res.ok || !story.trim()) {
-      useLocalFallback(
-        isOutOfCredits
-          ? "Out of credits - generating fallback story"
-          : "AI unavailable - using local generator"
-      );
+      const { code } = normalizeApiError(res.status, data ?? {});
+      useLocalFallback(FALLBACK_MESSAGE[code] ?? FALLBACK_MESSAGE.HTTP);
       return;
     }
 
