@@ -1,8 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import { extname, join } from "node:path";
-import { chunkText } from "./chunk";
-import { embedTexts } from "./embeddings";
-import { ensureSchema, upsertChunks } from "./store";
+import { chunkText } from "./chunk.js";
+import { embedTexts } from "./embeddings.js";
+import { ensureSchema, upsertChunks } from "./store.js";
 
 const SUPPORTED_EXTENSIONS = new Set([".md", ".txt"]);
 

@@ -1,4 +1,4 @@
-import type { StoryLength } from "./schema";
+import type { StoryLength } from "./schema.js";
 
 const LENGTH_DIRECTIVE: Record<StoryLength, string> = {
   short: "Write a concise next part of about 3 short paragraphs.",

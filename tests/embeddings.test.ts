@@ -32,9 +32,18 @@ describe("embeddings routing", () => {
 
   it("uses local embeddings when AI_BASE_URL is unset", async () => {
     delete process.env.AI_BASE_URL;
+    delete process.env.FORCE_LOCAL_EMBEDDINGS;
     expect(activeEmbeddingDim()).toBe(LOCAL_EMBEDDING_DIM);
     const vectors = await embedTexts(["scene and sequel pacing"]);
     expect(vectors[0]).toHaveLength(LOCAL_EMBEDDING_DIM);
+    const query = await embedQuery("archetypes");
+    expect(query).toHaveLength(LOCAL_EMBEDDING_DIM);
+  });
+
+  it("keeps local embeddings when FORCE_LOCAL_EMBEDDINGS is set", async () => {
+    process.env.AI_BASE_URL = "https://example.com/v1";
+    process.env.FORCE_LOCAL_EMBEDDINGS = "1";
+    expect(activeEmbeddingDim()).toBe(LOCAL_EMBEDDING_DIM);
     const query = await embedQuery("archetypes");
     expect(query).toHaveLength(LOCAL_EMBEDDING_DIM);
   });

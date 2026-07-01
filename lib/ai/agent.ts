@@ -1,11 +1,11 @@
 import { streamText, stepCountIs, tool, type ModelMessage } from "ai";
 import { z } from "zod";
-import { languageModel, CHAT_MODEL_ID } from "./provider";
-import { buildSystemPrompt } from "./prompt";
-import { prepareRetrievedContent, screenOutput } from "./guardrails";
-import { isCreditsError } from "./errors";
-import { logGeneration } from "./observability";
-import { retrieve as defaultRetrieve, type RetrievedChunk } from "../rag/retrieve";
+import { languageModel, CHAT_MODEL_ID } from "./provider.js";
+import { buildSystemPrompt } from "./prompt.js";
+import { prepareRetrievedContent, screenOutput } from "./guardrails.js";
+import { isCreditsError } from "./errors.js";
+import { logGeneration } from "./observability.js";
+import { retrieve as defaultRetrieve, type RetrievedChunk } from "../rag/retrieve.js";
 
 export interface GenerateParams {
   messages: Array<{ role: "user" | "assistant"; content: string }>;

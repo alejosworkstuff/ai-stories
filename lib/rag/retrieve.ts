@@ -1,5 +1,5 @@
-import { embedQuery } from "./embeddings";
-import { similaritySearch, type RetrievedChunk } from "./store";
+import { embedQuery } from "./embeddings.js";
+import { similaritySearch, type RetrievedChunk } from "./store.js";
 
 export type { RetrievedChunk };
 

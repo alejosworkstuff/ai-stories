@@ -2,15 +2,15 @@ import {
   createRateLimiter,
   type MinimalRequest,
   type RateLimiter,
-} from "../lib/rate-limit";
-import { validateGenerateRequest } from "../lib/validate";
-import { screenMessages } from "../lib/ai/guardrails";
+} from "../lib/rate-limit.js";
+import { validateGenerateRequest } from "../lib/validate.js";
+import { screenMessages } from "../lib/ai/guardrails.js";
 import {
   createStoryStreamer,
   type GenerateParams,
   type GenerationResult,
   type ResponseSink,
-} from "../lib/ai/agent";
+} from "../lib/ai/agent.js";
 
 interface RequestLike extends MinimalRequest {
   method?: string;

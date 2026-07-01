@@ -4,7 +4,7 @@ import {
   MAX_MESSAGE_CONTENT_LENGTH,
   MAX_MESSAGES,
   MAX_TONE_LENGTH,
-} from "./ai/schema";
+} from "./ai/schema.js";
 
 export { ALLOWED_LENGTHS, MAX_MESSAGE_CONTENT_LENGTH, MAX_TONE_LENGTH, MAX_MESSAGES };
 

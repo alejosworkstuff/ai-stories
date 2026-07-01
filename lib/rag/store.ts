@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { activeEmbeddingDim } from "./embeddings";
+import { activeEmbeddingDim } from "./embeddings.js";
 
 export interface StoredChunk {
   source: string;

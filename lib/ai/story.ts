@@ -1,11 +1,11 @@
 import { generateObject, type ModelMessage } from "ai";
-import { languageModel } from "./provider";
-import { buildSystemPrompt } from "./prompt";
-import type { Story } from "./schema";
-import { prepareRetrievedContent, validateStoryOutput } from "./guardrails";
-import { StoryOutputError } from "./errors";
-import { retrieve as defaultRetrieve, type RetrievedChunk } from "../rag/retrieve";
-import { storySchema } from "./schema";
+import { languageModel } from "./provider.js";
+import { buildSystemPrompt } from "./prompt.js";
+import type { Story } from "./schema.js";
+import { prepareRetrievedContent, validateStoryOutput } from "./guardrails.js";
+import { StoryOutputError } from "./errors.js";
+import { retrieve as defaultRetrieve, type RetrievedChunk } from "../rag/retrieve.js";
+import { storySchema } from "./schema.js";
 
 export interface StoryObjectParams {
   messages: Array<{ role: "user" | "assistant"; content: string }>;

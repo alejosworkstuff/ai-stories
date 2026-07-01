@@ -1,4 +1,4 @@
-import { storySchema, type Story } from "./schema";
+import { storySchema, type Story } from "./schema.js";
 
 export interface InjectionVerdict {
   flagged: boolean;

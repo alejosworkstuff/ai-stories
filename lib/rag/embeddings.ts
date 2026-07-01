@@ -1,12 +1,14 @@
 import { embed, embedMany } from "ai";
-import { embeddingModel } from "../ai/provider";
+import { embeddingModel } from "../ai/provider.js";
 import {
   LOCAL_EMBEDDING_DIM,
   localBagEmbedMany,
   localBagEmbedQuery,
-} from "./embeddings-local";
+} from "./embeddings-local.js";
 
 function useLocalEmbeddings(): boolean {
+  const forced = process.env.FORCE_LOCAL_EMBEDDINGS?.trim().toLowerCase();
+  if (forced === "1" || forced === "true" || forced === "yes") return true;
   return !process.env.AI_BASE_URL?.trim();
 }
 
