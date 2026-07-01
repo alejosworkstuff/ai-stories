@@ -2,7 +2,15 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const envPath = resolve(process.cwd(), ".env.example");
-const requiredKeys = ["REPLICATE_API_TOKEN"];
+const requiredKeys = [
+  "AI_BASE_URL",
+  "AI_API_KEY",
+  "REPLICATE_API_TOKEN",
+  "AI_MODEL",
+  "AI_EMBEDDING_MODEL",
+  "EMBEDDING_DIM",
+  "DATABASE_URL",
+];
 
 function fail(message) {
   console.error(`Env example validation failed: ${message}`);

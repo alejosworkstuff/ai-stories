@@ -49,6 +49,14 @@ export function renderStory(output, { outputEl, copyBtn, statsEl, updateStats })
   outputEl.scrollIntoView({ behavior: "smooth" });
 }
 
+// Live render of the accumulated token stream (escaped on every update).
+export function appendStoryChunk(text, { outputEl, copyBtn, statsEl, updateStats }) {
+  if (copyBtn) copyBtn.style.display = "block";
+  if (!outputEl) return;
+  outputEl.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
+  updateStats(text);
+}
+
 export function renderError(message, outputEl) {
   if (!outputEl) return;
   outputEl.innerHTML = `<p class="error-msg">${escapeHtml(message)}</p>`;

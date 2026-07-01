@@ -1,7 +1,7 @@
 import { whenReady } from "./utils.js";
 import { RANDOM_SEEDS } from "./constants.js";
 import { getStories, saveStory } from "./storage.js";
-import { requestStory } from "./api.js";
+import { streamStory } from "./api.js";
 import { normalizeApiError } from "./http.js";
 import { generateLocalStory } from "./localGenerator.js";
 import { initDarkMode, toggleDarkMode } from "./theme.js";
@@ -9,6 +9,7 @@ import {
   loadHistory,
   handleHistoryClick,
   renderStory,
+  appendStoryChunk,
   renderError,
   renderGenerating,
   updateStats,
@@ -125,7 +126,7 @@ async function runStoryRequest({ isContinuation }) {
   renderGenerating(ELEMENTS.out);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   function useLocalFallback(message) {
     if (!fallbackPopupShown) {
@@ -140,22 +141,27 @@ async function runStoryRequest({ isContinuation }) {
   }
 
   try {
-    const res = await requestStory({ messages, tone, length }, controller.signal);
+    let streamed = "";
+    const { res, data, text } = await streamStory(
+      { messages, tone, length },
+      {
+        signal: controller.signal,
+        onToken: (chunk) => {
+          streamed += chunk;
+          appendStoryChunk(streamed, {
+            outputEl: ELEMENTS.out,
+            copyBtn: ELEMENTS.copyBtn,
+            statsEl: ELEMENTS.stats,
+            updateStats: (value) => updateStats(value, ELEMENTS.stats),
+          });
+        },
+      }
+    );
     clearTimeout(timeoutId);
 
-    const contentType = res.headers.get("content-type") || "";
-    let data = null;
-    if (contentType.includes("application/json")) {
-      try {
-        data = await res.json();
-      } catch {
-        data = null;
-      }
-    }
+    const story = String(text || streamed).trim();
 
-    const story = String(data?.output ?? "");
-
-    if (!res.ok || !story.trim()) {
+    if (!res.ok || !story) {
       const { code } = normalizeApiError(res.status, data ?? {});
       useLocalFallback(FALLBACK_MESSAGE[code] ?? FALLBACK_MESSAGE.HTTP);
       return;

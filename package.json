@@ -1,31 +1,49 @@
 {
   "name": "ai-stories",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "homepage": "https://ai-stories-ashy.vercel.app",
+  "description": "AI story generator: streaming RAG + agentic generation on the Vercel AI SDK, grounded by pgvector on Neon, with typed outputs, guardrails, an eval harness, and observability.",
   "keywords": [
     "portfolio",
-    "javascript",
     "typescript",
     "nodejs",
     "ai",
-    "replicate"
+    "vercel-ai-sdk",
+    "rag",
+    "pgvector",
+    "agents",
+    "llm",
+    "streaming",
+    "evals",
+    "zod"
   ],
   "scripts": {
     "dev": "vercel dev",
-    "test": "node --test tests/*.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check:syntax": "node --check api/generate-stories.js && node --check api/rate-limit.js && node --check api/validate.js && node --check public/js/http.js && node --check public/js/api.js && node --check public/js/app.js && node --check public/js/localGenerator.js && node --check public/js/ui.js && node --check public/js/theme.js && node --check public/js/storage.js && node --check public/js/constants.js && node --check public/js/utils.js",
+    "eval": "tsx evals/run.ts",
+    "db:setup": "tsx scripts/db-setup.ts",
+    "db:ingest": "tsx scripts/ingest-corpus.ts",
     "check:env-example": "node scripts/validate-env-example.mjs",
-    "ci": "npm run check:syntax && npm run test && npm run check:env-example",
+    "ci": "npm run typecheck && npm run test && npm run check:env-example",
     "ci:full": "npm run ci && npm run test:e2e"
   },
   "dependencies": {
-    "replicate": "^1.4.0"
+    "@ai-sdk/openai-compatible": "^1.0.0",
+    "@neondatabase/serverless": "^0.10.0",
+    "ai": "^5.0.0",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
+    "@types/node": "^22.10.0",
     "serve": "^14.2.4",
-    "sharp": "^0.35.1"
+    "sharp": "^0.35.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }

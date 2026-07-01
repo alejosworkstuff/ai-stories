@@ -1,5 +1,7 @@
 const RETRYABLE_STATUSES = new Set([429, 502, 503]);
 
+/** @typedef {{ status?: number; code?: string }} HttpErrorOptions */
+
 export class HttpError extends Error {
   constructor(message, options = {}) {
     super(message);

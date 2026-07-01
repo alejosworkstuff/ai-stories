@@ -2,6 +2,12 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/**
+ * @param {string} seed
+ * @param {string} tone
+ * @param {string} length
+ * @returns {string}
+ */
 export function generateLocalStory(seed, tone, length) {
   const intros = [
     `It began with ${seed}.`,
