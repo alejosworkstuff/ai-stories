@@ -12,3 +12,10 @@ export function isCreditsError(error: unknown): boolean {
     message.includes("quota")
   );
 }
+
+export class StoryOutputError extends Error {
+  constructor(detail: string) {
+    super(detail);
+    this.name = "StoryOutputError";
+  }
+}

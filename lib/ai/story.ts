@@ -1,9 +1,11 @@
 import { generateObject, type ModelMessage } from "ai";
 import { languageModel } from "./provider";
 import { buildSystemPrompt } from "./prompt";
-import { storySchema, type Story } from "./schema";
-import { wrapUntrusted } from "./guardrails";
+import type { Story } from "./schema";
+import { prepareRetrievedContent, validateStoryOutput } from "./guardrails";
+import { StoryOutputError } from "./errors";
 import { retrieve as defaultRetrieve, type RetrievedChunk } from "../rag/retrieve";
+import { storySchema } from "./schema";
 
 export interface StoryObjectParams {
   messages: Array<{ role: "user" | "assistant"; content: string }>;
@@ -15,7 +17,11 @@ export interface StoryObjectParams {
 export interface StoryObjectDeps {
   retrieve?: (query: string, k?: number) => Promise<RetrievedChunk[]>;
   model?: ReturnType<typeof languageModel>;
+  maxRepairAttempts?: number;
 }
+
+const REPAIR_SUFFIX =
+  "\nRepair: your previous answer failed validation. Return schema-valid story JSON only — no meta commentary, tool names, or instruction leakage.";
 
 /**
  * Structured (Zod-typed) story generation. Used by the eval harness and any
@@ -27,21 +33,37 @@ export async function generateStoryObject(
 ): Promise<{ story: Story; retrieved: RetrievedChunk[] }> {
   const retrieve = deps.retrieve ?? defaultRetrieve;
   const model = deps.model ?? languageModel();
+  const maxRepairAttempts = deps.maxRepairAttempts ?? 1;
 
   const lastUser = [...params.messages].reverse().find((m) => m.role === "user");
   const retrieved =
     params.grounded && lastUser ? await retrieve(lastUser.content, 4) : [];
   const grounding = retrieved.length
-    ? "\nReference passages:\n" +
-      retrieved.map((passage) => wrapUntrusted(passage.content)).join("\n")
+    ? "\nReference passages (cite as [source-file] when used):\n" +
+      retrieved
+        .map((passage) => `[${passage.source}] ${prepareRetrievedContent(passage.content)}`)
+        .join("\n")
     : "";
 
-  const { object } = await generateObject({
-    model,
-    schema: storySchema,
-    system: buildSystemPrompt(params.tone, params.length) + grounding,
-    messages: params.messages as ModelMessage[],
-  });
+  let repairNote = "";
+  let lastDetail = "invalid_story";
 
-  return { story: object, retrieved };
+  for (let attempt = 0; attempt <= maxRepairAttempts; attempt++) {
+    const { object } = await generateObject({
+      model,
+      schema: storySchema,
+      system: buildSystemPrompt(params.tone, params.length) + grounding + repairNote,
+      messages: params.messages as ModelMessage[],
+    });
+
+    const validation = validateStoryOutput(object);
+    if (validation.ok) {
+      return { story: validation.story, retrieved };
+    }
+
+    lastDetail = validation.detail;
+    repairNote = REPAIR_SUFFIX;
+  }
+
+  throw new StoryOutputError(lastDetail);
 }

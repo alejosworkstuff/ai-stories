@@ -90,6 +90,27 @@ describe("generate-stories handler", () => {
     expect(res.body).toEqual({ error: "unsafe_request" });
   });
 
+  it("returns 422 when generation is blocked by output guardrails", async () => {
+    const handler = createHandler({
+      generate: async () => ({
+        streamed: false as const,
+        status: 422,
+        errorCode: "unsafe_output",
+      }),
+    });
+    const res = createMockRes();
+    await handler(
+      {
+        method: "POST",
+        body: { messages: [{ role: "user", content: "A calm forest." }] },
+        headers: {},
+      },
+      res
+    );
+    expect(res.statusCode).toBe(422);
+    expect(res.body).toEqual({ error: "unsafe_output" });
+  });
+
   it("returns 429 when the rate limit is exceeded", async () => {
     const rateLimiter = createRateLimiter({ maxRequests: 1, windowMs: 60_000 });
     const handler = createHandler({ rateLimiter, generate: okGenerate });

@@ -2,7 +2,7 @@ import { streamText, stepCountIs, tool, type ModelMessage } from "ai";
 import { z } from "zod";
 import { languageModel, CHAT_MODEL_ID } from "./provider";
 import { buildSystemPrompt } from "./prompt";
-import { wrapUntrusted } from "./guardrails";
+import { prepareRetrievedContent, screenOutput } from "./guardrails";
 import { isCreditsError } from "./errors";
 import { logGeneration } from "./observability";
 import { retrieve as defaultRetrieve, type RetrievedChunk } from "../rag/retrieve";
@@ -68,7 +68,7 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
         return {
           passages: passages.map((passage) => ({
             source: passage.source,
-            content: wrapUntrusted(passage.content),
+            content: prepareRetrievedContent(passage.content),
           })),
         };
       },
@@ -81,6 +81,7 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
 
     let streamError: unknown = null;
     let firstChunkSent = false;
+    let accumulated = "";
 
     const result = streamText({
       model,
@@ -114,6 +115,20 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
 
     try {
       for await (const chunk of result.textStream) {
+        accumulated += chunk;
+        const leak = screenOutput(accumulated);
+        if (leak.flagged) {
+          streamError = new Error("output_guardrail");
+          if (!firstChunkSent) {
+            return {
+              streamed: false,
+              status: 422,
+              errorCode: "unsafe_output",
+            };
+          }
+          break;
+        }
+
         if (!firstChunkSent) {
           res.statusCode = 200;
           res.setHeader("Content-Type", "text/plain; charset=utf-8");

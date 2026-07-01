@@ -17,6 +17,7 @@ pnpm-debug.log*
 .netlify/
 .cache/
 .cache-loader/
+local_cache/
 .next/
 dist/
 build/

@@ -63,7 +63,9 @@ Browser (stream reader)
 
 ## RAG corpus
 
-A small storytelling-craft corpus lives in `corpus/` (`narrative-structure.md`, `tone-and-voice.md`, `character-archetypes.md`). It is chunked (paragraph-aware, with overlap), embedded, and upserted into a pgvector `documents` table. At request time the `searchCorpus` tool retrieves the top-k passages to ground craft decisions; retrieved text is fenced as untrusted context so it cannot inject instructions.
+A small storytelling-craft corpus lives in `corpus/` (`narrative-structure.md`, `tone-and-voice.md`, `character-archetypes.md`). It is chunked (paragraph-aware, with overlap), embedded, and upserted into a pgvector `documents` table. At request time the `searchCorpus` tool retrieves the top-k passages to ground craft decisions; retrieved text is fenced as untrusted context so it cannot inject instructions. When corpus guidance shapes the output, the model is instructed to cite the source file (e.g. `[narrative-structure.md]`).
+
+**Embeddings:** with `AI_BASE_URL` set, ingest/retrieval use the configured OpenAI-compatible embedding model. When `AI_BASE_URL` is unset, `npm run db:ingest` falls back to a local bag-of-words embedder (384 dims) so the RAG pipeline is runnable offline — swap to a real provider before production.
 
 Set up and ingest:
 
@@ -83,6 +85,8 @@ npm run db:ingest    # chunk + embed + upsert corpus/*.md
 ## Security & guardrails
 
 - **Prompt-injection screening** (`lib/ai/guardrails.ts`) rejects obvious override attempts with `400 unsafe_request`.
+- **Retrieved-content sanitization** strips injection-shaped lines from RAG passages before fencing them as untrusted context.
+- **Output guardrails** validate structured stories against the Zod schema (with one repair retry) and screen streamed prose for prompt/tool leakage (`422 unsafe_output` before the first token).
 - **Untrusted-content fencing** wraps retrieved passages so the model treats them as data, not instructions.
 - **Rate limiting** — fixed-window per-IP (`lib/rate-limit.ts`), `X-RateLimit-Remaining` / `Retry-After`.
 - **Security headers** via `vercel.json` (strict CSP `default-src 'self'`, HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, COOP).
@@ -103,6 +107,7 @@ Responses:
 - `200` — `text/plain` token stream (the generated story prose).
 - `400` — `{ "error": "messages_required" | "invalid_length" | "unsafe_request" | ... }`.
 - `402` — `{ "error": "provider_no_credits" }` (client falls back to the local generator).
+- `422` — `{ "error": "unsafe_output" }` (output guardrail blocked prompt/tool leakage).
 - `405` — `{ "error": "method_not_allowed" }`.
 - `429` — `{ "error": "rate_limit_exceeded" }`.
 - `500` — `{ "error": "generation_failed" }` (no internal details leaked).

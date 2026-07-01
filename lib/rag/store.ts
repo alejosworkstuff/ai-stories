@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { EMBEDDING_DIM } from "../ai/provider";
+import { activeEmbeddingDim } from "./embeddings";
 
 export interface StoredChunk {
   source: string;
@@ -33,9 +33,28 @@ function rowsOf(result: unknown): Array<Record<string, unknown>> {
   return Array.isArray(rows) ? (rows as Array<Record<string, unknown>>) : [];
 }
 
-export async function ensureSchema(dim: number = EMBEDDING_DIM): Promise<void> {
+async function documentsEmbeddingDim(sql: ReturnType<typeof neon>): Promise<number | null> {
+  const result = await sql(`
+    SELECT format_type(a.atttypid, a.atttypmod) AS coltype
+    FROM pg_attribute a
+    JOIN pg_class c ON a.attrelid = c.oid
+    JOIN pg_namespace n ON c.relnamespace = n.oid
+    WHERE c.relname = 'documents' AND a.attname = 'embedding' AND n.nspname = 'public'
+  `);
+  const coltype = String(rowsOf(result)[0]?.coltype ?? "");
+  const match = coltype.match(/vector\((\d+)\)/);
+  return match ? Number.parseInt(match[1]!, 10) : null;
+}
+
+export async function ensureSchema(dim: number = activeEmbeddingDim()): Promise<void> {
   const sql = getSql();
   await sql("CREATE EXTENSION IF NOT EXISTS vector");
+
+  const existingDim = await documentsEmbeddingDim(sql);
+  if (existingDim !== null && existingDim !== dim) {
+    await sql("DROP TABLE documents");
+  }
+
   await sql(
     `CREATE TABLE IF NOT EXISTS documents (
       id BIGSERIAL PRIMARY KEY,

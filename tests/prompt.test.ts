@@ -10,10 +10,11 @@ describe("buildSystemPrompt", () => {
     expect(buildSystemPrompt(undefined, "short")).not.toContain("Tone:");
   });
 
-  it("includes a prompt-injection defense and tool guidance", () => {
+  it("includes citation and prompt-injection guidance", () => {
     const prompt = buildSystemPrompt("noir", "long");
     expect(prompt).toContain("untrusted");
     expect(prompt).toContain("searchCorpus");
+    expect(prompt).toContain("[narrative-structure.md]");
   });
 });
 

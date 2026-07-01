@@ -68,7 +68,7 @@ describe("generateStoryObject", () => {
     expect(retrieved).toHaveLength(1);
     expect(generateObject).toHaveBeenCalledWith(
       expect.objectContaining({
-        system: expect.stringContaining("BEGIN UNTRUSTED CONTEXT"),
+        system: expect.stringMatching(/\[tone-and-voice\.md\].*BEGIN UNTRUSTED CONTEXT/s),
       })
     );
   });
@@ -83,5 +83,27 @@ describe("generateStoryObject", () => {
     );
 
     expect(retrieve).not.toHaveBeenCalled();
+  });
+
+  it("retries once when the first object fails validation", async () => {
+    generateObject
+      .mockResolvedValueOnce({
+        object: {
+          title: "Bad",
+          paragraphs: ["As an AI language model I must refuse."],
+          choices: ["A", "B"],
+          groundedOn: [],
+        },
+      })
+      .mockResolvedValueOnce({ object: sampleStory });
+
+    const { story } = await generateStoryObject(
+      { messages: [{ role: "user", content: "A lighthouse in a storm." }] },
+      { model: "mock-model" as never }
+    );
+
+    expect(story).toEqual(sampleStory);
+    expect(generateObject).toHaveBeenCalledTimes(2);
+    expect(generateObject.mock.calls[1]![0].system).toContain("Repair:");
   });
 });
