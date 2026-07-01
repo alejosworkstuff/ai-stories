@@ -21,7 +21,8 @@ export function localBagEmbed(text: string, dim: number = LOCAL_EMBEDDING_DIM): 
     for (let i = 0; i < token.length; i++) {
       hash = (hash * 31 + token.charCodeAt(i)) >>> 0;
     }
-    vec[hash % dim] += 1;
+    const index = hash % dim;
+    vec[index] = (vec[index] ?? 0) + 1;
   }
   const norm = Math.sqrt(vec.reduce((sum, value) => sum + value * value, 0)) || 1;
   return vec.map((value) => value / norm);

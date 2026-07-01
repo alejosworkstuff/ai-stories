@@ -33,7 +33,8 @@ function rowsOf(result: unknown): Array<Record<string, unknown>> {
   return Array.isArray(rows) ? (rows as Array<Record<string, unknown>>) : [];
 }
 
-async function documentsEmbeddingDim(sql: ReturnType<typeof neon>): Promise<number | null> {
+async function documentsEmbeddingDim(): Promise<number | null> {
+  const sql = getSql();
   const result = await sql(`
     SELECT format_type(a.atttypid, a.atttypmod) AS coltype
     FROM pg_attribute a
@@ -50,7 +51,7 @@ export async function ensureSchema(dim: number = activeEmbeddingDim()): Promise<
   const sql = getSql();
   await sql("CREATE EXTENSION IF NOT EXISTS vector");
 
-  const existingDim = await documentsEmbeddingDim(sql);
+  const existingDim = await documentsEmbeddingDim();
   if (existingDim !== null && existingDim !== dim) {
     await sql("DROP TABLE documents");
   }
