@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
     await route.fulfill({
       status: 402,
       contentType: "application/json",
-      body: JSON.stringify({ error: "replicate_no_credits" }),
+      body: JSON.stringify({ error: "provider_no_credits" }),
     });
   });
 
