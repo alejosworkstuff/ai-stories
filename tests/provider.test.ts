@@ -18,8 +18,8 @@ describe("provider", () => {
     process.env.AI_BASE_URL = "https://example.com/v1";
     process.env.AI_API_KEY = "test-key";
     const { languageModel } = await import("../lib/ai/provider");
-    const model = languageModel("meta/meta-llama-3-8b-instruct");
+    const model = languageModel("llama-3.3-70b-versatile");
     expect(model).toBeDefined();
-    expect(model).toHaveProperty("modelId", "meta/meta-llama-3-8b-instruct");
+    expect(model).toHaveProperty("modelId", "llama-3.3-70b-versatile");
   });
 });

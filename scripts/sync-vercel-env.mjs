@@ -11,6 +11,9 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const envPath = resolve(root, ".env");
 
+const DEFAULT_BASE_URL = "https://api.groq.com/openai/v1";
+const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+
 function parseEnvFile(path) {
   const out = {};
   for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
@@ -44,11 +47,16 @@ function addEnv(name, value, { force = false } = {}) {
 }
 
 const local = parseEnvFile(envPath);
-const replicateToken = local.REPLICATE_API_TOKEN?.trim();
+const aiApiKey = (local.AI_API_KEY ?? local.GROQ_API_KEY ?? local.REPLICATE_API_TOKEN)?.trim();
+const aiBaseUrl = (local.AI_BASE_URL?.trim() || DEFAULT_BASE_URL);
+const aiModel = (local.AI_MODEL?.trim() || DEFAULT_MODEL);
 
 addEnv("DATABASE_URL", local.DATABASE_URL, { force: true });
-addEnv("AI_BASE_URL", "https://openai-proxy.replicate.com/v1", { force: true });
-addEnv("AI_API_KEY", replicateToken, { force: true });
-addEnv("FORCE_LOCAL_EMBEDDINGS", "1", { force: true });
+addEnv("AI_BASE_URL", aiBaseUrl, { force: true });
+addEnv("AI_API_KEY", aiApiKey, { force: true });
+addEnv("AI_MODEL", aiModel, { force: true });
+addEnv("FORCE_LOCAL_EMBEDDINGS", local.FORCE_LOCAL_EMBEDDINGS?.trim() || "1", {
+  force: true,
+});
 
 console.log("done — redeploy production to pick up new vars");

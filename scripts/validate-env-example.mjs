@@ -5,10 +5,11 @@ const envPath = resolve(process.cwd(), ".env.example");
 const requiredKeys = [
   "AI_BASE_URL",
   "AI_API_KEY",
-  "REPLICATE_API_TOKEN",
+  "GROQ_API_KEY",
   "AI_MODEL",
   "AI_EMBEDDING_MODEL",
   "EMBEDDING_DIM",
+  "FORCE_LOCAL_EMBEDDINGS",
   "DATABASE_URL",
 ];
 

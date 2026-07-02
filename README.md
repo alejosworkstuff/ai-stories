@@ -4,7 +4,7 @@
 
 A collaborative AI story generator built as a **production-minded AI-engineering** portfolio piece. It streams tokens to the browser, grounds generation in a retrieved corpus (RAG over **pgvector**), runs an **agentic tool-calling loop** on the **Vercel AI SDK**, enforces **typed outputs** and **prompt-injection guardrails**, and ships with an **eval harness** and **observability**.
 
-> Built on the Vercel AI SDK's OpenAI-compatible provider, so the LLM backend is swappable. By default it fronts **Replicate** (reusing `REPLICATE_API_TOKEN`) through an OpenAI-compatible gateway; point `AI_BASE_URL`/`AI_API_KEY` at OpenAI / Anthropic / Groq to switch.
+> Built on the Vercel AI SDK's OpenAI-compatible provider, so the LLM backend is swappable. **Production default: Groq** (`llama-3.3-70b-versatile`, free tier). Point `AI_BASE_URL`/`AI_API_KEY` at OpenRouter, Google AI Studio (Gemini), OpenAI, or Anthropic to switch.
 
 ## Screenshots
 
@@ -143,15 +143,16 @@ See `.env.example`. Summary:
 
 | Var | Purpose |
 | --- | --- |
-| `AI_BASE_URL` | OpenAI-compatible endpoint (Replicate gateway by default) |
-| `AI_API_KEY` | API key for the gateway/provider (defaults to `REPLICATE_API_TOKEN`) |
-| `REPLICATE_API_TOKEN` | Existing Replicate token (used as `AI_API_KEY` default) |
+| `AI_BASE_URL` | OpenAI-compatible endpoint (Groq by default: `https://api.groq.com/openai/v1`) |
+| `AI_API_KEY` | API key for the provider (or set `GROQ_API_KEY`) |
+| `GROQ_API_KEY` | Optional alias read by `sync-vercel-env.mjs` when `AI_API_KEY` is unset |
 | `AI_MODEL` / `AI_EMBEDDING_MODEL` | Chat + embedding model ids |
 | `EMBEDDING_DIM` | Embedding dimension (must match the embedding model) |
+| `FORCE_LOCAL_EMBEDDINGS` | `1` keeps 384-dim bag-of-words retrieval (required with Groq — no embedding API) |
 | `DATABASE_URL` | Neon Postgres (pooled) for the pgvector corpus |
 | `LANGFUSE_*` | Optional observability forwarding |
 
-> Provider note: `@ai-sdk/replicate` only exposes image models, so text generation goes through the AI SDK's OpenAI-compatible provider. To keep Replicate as the backend, run a Replicate → OpenAI-compatible gateway and reuse your Replicate token; to switch providers, change `AI_BASE_URL` + `AI_API_KEY` + the model ids.
+> Provider note: Groq has no embedding API, so production sets `FORCE_LOCAL_EMBEDDINGS=1` to keep RAG retrieval on the offline 384-dim corpus while chat streams from Groq. To switch providers, change `AI_BASE_URL` + `AI_API_KEY` + the model ids, then run `node scripts/sync-vercel-env.mjs`.
 
 ---
 
@@ -161,7 +162,7 @@ See `.env.example`. Summary:
 git clone https://github.com/alejosworkstuff/ai-stories.git
 cd ai-stories
 npm install
-cp .env.example .env          # fill in AI_BASE_URL / AI_API_KEY / DATABASE_URL
+cp .env.example .env          # fill in GROQ_API_KEY (or AI_API_KEY) + DATABASE_URL
 npm run db:setup && npm run db:ingest
 npm run dev                   # http://localhost:3000
 ```
