@@ -40,7 +40,8 @@ test("delete one history item and clear all", async ({ page }) => {
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator("#history li")).toHaveCount(2);
 
-  await page.getByRole("button", { name: "Delete story" }).first().click();
+  // History is newest-first; delete the older (second) row and keep the latest story.
+  await page.getByRole("button", { name: "Delete story" }).nth(1).click();
   await expect(page.locator("#history li")).toHaveCount(1);
   await expect(page.locator("#history li").first()).toContainText("detective");
 
