@@ -15,7 +15,10 @@
 <body>
   <div class="app">
     <aside class="history-box expanded" id="historyBox">
-      <h3>Story History</h3>
+      <div class="history-header">
+        <h3>Story History</h3>
+        <button id="clearHistory" class="history-clear" type="button" disabled>Clear all</button>
+      </div>
       <ul id="history"></ul>
       <button
         id="toggleHistory"

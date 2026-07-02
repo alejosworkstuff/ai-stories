@@ -31,6 +31,24 @@ test("generate a story and see output, stats, and history", async ({ page }) => 
   await expect(page.locator("#continueBtn")).toBeEnabled();
 });
 
+test("delete one history item and clear all", async ({ page }) => {
+  await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.locator("#history li")).toHaveCount(1);
+
+  await page.locator("#seed").fill("A detective who can hear lies");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.locator("#history li")).toHaveCount(2);
+
+  await page.getByRole("button", { name: "Delete story" }).first().click();
+  await expect(page.locator("#history li")).toHaveCount(1);
+  await expect(page.locator("#history li").first()).toContainText("detective");
+
+  await page.getByRole("button", { name: "Clear all" }).click();
+  await expect(page.locator("#history li")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Clear all" })).toBeDisabled();
+});
+
 test("continue a story appends the next part", async ({ page }) => {
   const continuation =
     "The violinist followed the melody into a hidden alley.\n\nNeon reflected off wet cobblestones.";

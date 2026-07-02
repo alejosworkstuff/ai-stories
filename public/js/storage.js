@@ -16,3 +16,15 @@ export function saveStory(story) {
   }
   localStorage.setItem(STORAGE_KEYS.storyHistory, JSON.stringify(saved));
 }
+
+export function removeStoryAt(index) {
+  const saved = getStories();
+  if (index < 0 || index >= saved.length) return false;
+  saved.splice(index, 1);
+  localStorage.setItem(STORAGE_KEYS.storyHistory, JSON.stringify(saved));
+  return true;
+}
+
+export function clearStories() {
+  localStorage.removeItem(STORAGE_KEYS.storyHistory);
+}

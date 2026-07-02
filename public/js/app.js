@@ -1,6 +1,6 @@
 import { whenReady } from "./utils.js";
 import { RANDOM_SEEDS } from "./constants.js";
-import { getStories, saveStory } from "./storage.js";
+import { getStories, saveStory, removeStoryAt, clearStories } from "./storage.js";
 import { streamStory } from "./api.js";
 import { normalizeApiError } from "./http.js";
 import { generateLocalStory } from "./localGenerator.js";
@@ -8,6 +8,7 @@ import { initDarkMode, toggleDarkMode } from "./theme.js";
 import {
   loadHistory,
   handleHistoryClick,
+  bindHistoryDelete,
   renderStory,
   appendStoryChunk,
   renderError,
@@ -35,6 +36,7 @@ const ELEMENTS = {
   historyEl: document.getElementById("history"),
   historyBox: document.getElementById("historyBox"),
   historyToggleBtn: document.getElementById("toggleHistory"),
+  clearHistoryBtn: document.getElementById("clearHistory"),
   themeToggle: document.getElementById("themeToggle"),
 };
 
@@ -79,7 +81,7 @@ function renderCurrentStory() {
     updateStats: (text) => updateStats(text, ELEMENTS.stats),
   });
   saveStory(story);
-  loadHistory(ELEMENTS.historyEl);
+  loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
   setContinueEnabled(hasActiveConversation());
 }
 
@@ -252,7 +254,7 @@ function selectLengthOption(optionButton) {
 function init() {
   initDarkMode(ELEMENTS.themeToggle);
   generateRandomSeed();
-  loadHistory(ELEMENTS.historyEl);
+  loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
   setContinueEnabled(false);
 }
 
@@ -291,6 +293,17 @@ function bindEvents() {
   });
 
   handleHistoryClick(ELEMENTS.historyEl, onSelectStory);
+
+  bindHistoryDelete(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn, {
+    onDeleteAt: (index) => {
+      removeStoryAt(index);
+      loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
+    },
+    onClearAll: () => {
+      clearStories();
+      loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
+    },
+  });
 
   ELEMENTS.seedEl?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") createStory();

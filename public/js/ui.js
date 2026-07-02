@@ -3,31 +3,53 @@ import { getStories } from "./storage.js";
 
 const PREVIEW_LENGTH = 60;
 
-export function loadHistory(historyEl) {
+function storyPreview(story) {
+  const safeStory = String(story);
+  return safeStory.length > PREVIEW_LENGTH
+    ? safeStory.slice(0, PREVIEW_LENGTH) + "..."
+    : safeStory;
+}
+
+export function loadHistory(historyEl, clearBtn) {
   if (!historyEl) return;
 
   const saved = getStories();
   const fragment = document.createDocumentFragment();
 
   saved.forEach((story, index) => {
-    const safeStory = String(story);
     const li = document.createElement("li");
-    li.textContent =
-      safeStory.length > PREVIEW_LENGTH
-        ? safeStory.slice(0, PREVIEW_LENGTH) + "..."
-        : safeStory;
     li.dataset.index = String(index);
+
+    const text = document.createElement("span");
+    text.className = "history-item__text";
+    text.textContent = storyPreview(story);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "history-item__delete";
+    deleteBtn.setAttribute("aria-label", "Delete story");
+    deleteBtn.title = "Delete story";
+    deleteBtn.textContent = "×";
+
+    li.appendChild(text);
+    li.appendChild(deleteBtn);
     fragment.appendChild(li);
   });
 
   historyEl.innerHTML = "";
   historyEl.appendChild(fragment);
+
+  if (clearBtn) {
+    clearBtn.disabled = saved.length === 0;
+  }
 }
 
 export function handleHistoryClick(historyEl, onSelectStory) {
   if (!historyEl) return;
 
   historyEl.addEventListener("click", (e) => {
+    if (e.target.closest(".history-item__delete")) return;
+
     const li = e.target.closest("li");
     if (!li || li.parentElement !== historyEl) return;
     const index = li.dataset.index;
@@ -36,6 +58,31 @@ export function handleHistoryClick(historyEl, onSelectStory) {
     const saved = getStories();
     const story = saved[parseInt(index, 10)];
     if (story != null) onSelectStory(String(story));
+  });
+}
+
+export function bindHistoryDelete(historyEl, clearBtn, { onDeleteAt, onClearAll }) {
+  if (historyEl) {
+    historyEl.addEventListener("click", (e) => {
+      const deleteBtn = e.target.closest(".history-item__delete");
+      if (!deleteBtn) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const li = deleteBtn.closest("li");
+      if (!li || li.parentElement !== historyEl) return;
+      const index = li.dataset.index;
+      if (index == null) return;
+
+      onDeleteAt(parseInt(index, 10));
+    });
+  }
+
+  clearBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (clearBtn.disabled) return;
+    onClearAll();
   });
 }
 
