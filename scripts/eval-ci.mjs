@@ -10,14 +10,17 @@ if (missing.length > 0) {
   process.exit(0);
 }
 
-const result = spawnSync("npm", ["run", "eval"], {
-  stdio: "inherit",
-  shell: true,
-  env: {
-    ...process.env,
-    EVAL_JUDGE: process.env.EVAL_JUDGE ?? "1",
-    FORCE_LOCAL_EMBEDDINGS: process.env.FORCE_LOCAL_EMBEDDINGS ?? "1",
-  },
-});
+const result = spawnSync(
+  "node",
+  ["./node_modules/tsx/dist/cli.mjs", "evals/run.ts"],
+  {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      EVAL_JUDGE: process.env.EVAL_JUDGE ?? "1",
+      FORCE_LOCAL_EMBEDDINGS: process.env.FORCE_LOCAL_EMBEDDINGS ?? "1",
+    },
+  }
+);
 
 process.exit(result.status ?? 1);
