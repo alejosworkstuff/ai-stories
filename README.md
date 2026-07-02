@@ -78,7 +78,14 @@ npm run db:ingest    # chunk + embed + upsert corpus/*.md
 
 ## Evals
 
-`npm run eval` runs the golden set in `evals/dataset.ts` through structured generation and scores each case with deterministic graders (`evals/graders.ts`): schema validity, minimum paragraphs, presence of choices, and no prompt leakage. It exits non-zero below `EVAL_THRESHOLD` (default `0.8`), so it can gate CI once a provider is configured. The graders themselves are unit-tested offline (`tests/graders.test.ts`) and run with no API key.
+`npm run eval` runs the golden set in `evals/dataset.ts` through structured generation and scores each case with:
+
+- **Deterministic graders** (`evals/graders.ts`): schema validity, minimum paragraphs, choices, no prompt leakage, grounded citations.
+- **LLM-as-judge** (`evals/judge.ts`): relevance + fiction quality (enabled by default; set `EVAL_JUDGE=0` to skip).
+
+It exits non-zero when the overall score falls below `EVAL_THRESHOLD` (default `0.8`) or **regresses** below `evals/baseline.json`. After a confirmed green run against production, refresh the baseline with `npm run eval:baseline`.
+
+CI runs `npm run eval:ci` in a dedicated job when `AI_API_KEY`, `AI_BASE_URL`, and `DATABASE_URL` secrets are configured; otherwise it skips with a warning. Deterministic graders are unit-tested offline (`tests/graders.test.ts`, `tests/judge.test.ts`, `tests/regression.test.ts`).
 
 ---
 
@@ -133,6 +140,8 @@ Scripts:
 - `npm run test:js` — `node --test` (frontend modules)
 - `npm run test:e2e` — Playwright
 - `npm run eval` — eval harness (requires a configured provider)
+- `npm run eval:baseline` — record current scores to `evals/baseline.json`
+- `npm run eval:ci` — CI entrypoint (skips when secrets are missing)
 - `npm run db:setup` / `npm run db:ingest` — pgvector schema + corpus ingestion
 
 ---

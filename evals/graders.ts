@@ -8,6 +8,8 @@ export interface EvalCase {
   length?: "short" | "medium" | "long";
   grounded?: boolean;
   minParagraphs: number;
+  /** When grounded, at least one of these corpus sources should appear in groundedOn. */
+  expectSources?: string[];
 }
 
 export interface GraderResult {
@@ -42,11 +44,36 @@ export function gradeNoPromptLeak(story: Story): GraderResult {
   return { name: "no_prompt_leak", passed: !leak.flagged, detail: leak.reason };
 }
 
+export function gradeGroundedRelevance(story: Story, testCase: EvalCase): GraderResult {
+  if (!testCase.grounded) {
+    return { name: "grounded_relevance", passed: true };
+  }
+
+  const cited = story.groundedOn;
+  if (testCase.expectSources?.length) {
+    const hit = testCase.expectSources.some((source) => cited.includes(source));
+    return {
+      name: "grounded_relevance",
+      passed: hit,
+      detail: hit
+        ? undefined
+        : `expected one of [${testCase.expectSources.join(", ")}], got [${cited.join(", ") || "none"}]`,
+    };
+  }
+
+  return {
+    name: "grounded_relevance",
+    passed: cited.length >= 1,
+    detail: `${cited.length} source(s)`,
+  };
+}
+
 export function gradeStory(story: Story, testCase: EvalCase): GraderResult[] {
   return [
     gradeMinParagraphs(story, testCase.minParagraphs),
     gradeHasChoices(story),
     gradeNoPromptLeak(story),
+    gradeGroundedRelevance(story, testCase),
   ];
 }
 

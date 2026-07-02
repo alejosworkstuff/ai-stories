@@ -4,7 +4,7 @@ import { languageModel, CHAT_MODEL_ID } from "./provider.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { prepareRetrievedContent, screenOutput } from "./guardrails.js";
 import { isCreditsError } from "./errors.js";
-import { logGeneration } from "./observability.js";
+import { logGeneration, buildPromptPreview, estimateCostUsd } from "./observability.js";
 import { retrieve as defaultRetrieve, type RetrievedChunk } from "../rag/retrieve.js";
 
 export interface GenerateParams {
@@ -83,9 +83,11 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
     let firstChunkSent = false;
     let accumulated = "";
 
+    const systemPrompt = buildSystemPrompt(params.tone, params.length);
+
     const result = streamText({
       model,
-      system: buildSystemPrompt(params.tone, params.length),
+      system: systemPrompt,
       messages,
       tools: { searchCorpus },
       stopWhen: stepCountIs(maxSteps),
@@ -105,10 +107,13 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
           inputTokens: usage?.inputTokens,
           outputTokens: usage?.outputTokens,
           totalTokens: usage?.totalTokens,
+          estimatedCostUsd: estimateCostUsd(CHAT_MODEL_ID, usage),
+          promptPreview: buildPromptPreview({ system: systemPrompt, messages: params.messages }),
           steps: steps.length,
           toolCalls,
           retrievedPassages: retrievedCount,
           finishReason,
+          source: "stream",
         });
       },
     });

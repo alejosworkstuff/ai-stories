@@ -10,6 +10,13 @@ vi.mock("ai", () => ({
 
 vi.mock("../lib/ai/provider", () => ({
   languageModel: vi.fn(() => "mock-model"),
+  CHAT_MODEL_ID: "test-model",
+}));
+
+vi.mock("../lib/ai/observability", () => ({
+  logGeneration: vi.fn(),
+  buildPromptPreview: vi.fn(() => "preview"),
+  estimateCostUsd: vi.fn(() => 0),
 }));
 
 import { generateStoryObject } from "../lib/ai/story";
