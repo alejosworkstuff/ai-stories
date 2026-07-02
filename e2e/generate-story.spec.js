@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 const MOCK_STORY =
   "It began with a violinist in Buenos Aires.\n\nThe city hummed with neon and rain.";
 
+const MOCK_DETECTIVE_STORY =
+  "The detective could hear every lie in the room.\n\nNobody spoke freely around her.";
+
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/generate-stories", async (route) => {
     await route.fulfill({
@@ -32,6 +35,18 @@ test("generate a story and see output, stats, and history", async ({ page }) => 
 });
 
 test("delete one history item and clear all", async ({ page }) => {
+  let requestCount = 0;
+  await page.unroute("**/api/generate-stories");
+  await page.route("**/api/generate-stories", async (route) => {
+    requestCount += 1;
+    const output = requestCount === 1 ? MOCK_STORY : MOCK_DETECTIVE_STORY;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ output }),
+    });
+  });
+
   await page.locator("#seed").fill("A violinist in Buenos Aires");
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator("#history li")).toHaveCount(1);
