@@ -47,7 +47,7 @@ function addEnv(name, value, { force = false } = {}) {
 }
 
 const local = parseEnvFile(envPath);
-const aiApiKey = (local.AI_API_KEY ?? local.GROQ_API_KEY ?? local.REPLICATE_API_TOKEN)?.trim();
+const aiApiKey = (local.AI_API_KEY ?? local.GROQ_API_KEY)?.trim();
 const aiBaseUrl = (local.AI_BASE_URL?.trim() || DEFAULT_BASE_URL);
 const aiModel = (local.AI_MODEL?.trim() || DEFAULT_MODEL);
 
