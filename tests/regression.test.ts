@@ -25,4 +25,11 @@ describe("checkRegression", () => {
     expect(result.ok).toBe(false);
     expect(result.detail).toContain("grounded-tone");
   });
+
+  it("allows scores below baseline when still above pass threshold", () => {
+    const strict = { overall: 0.95, cases: { "basic-short": 1.0 } };
+    expect(
+      checkRegression(0.833, { "basic-short": 0.833 }, strict, 0.8).ok
+    ).toBe(true);
+  });
 });

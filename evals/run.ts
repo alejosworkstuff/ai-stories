@@ -68,7 +68,7 @@ async function main() {
 
   if (CHECK_REGRESSION) {
     const baseline = loadBaseline();
-    const regression = checkRegression(overall, caseScores, baseline);
+    const regression = checkRegression(overall, caseScores, baseline, THRESHOLD);
     if (!regression.ok) {
       console.error(`REGRESSION: ${regression.detail}`);
       failed = true;

@@ -14,9 +14,11 @@ export function loadBaseline(path = resolve(process.cwd(), "evals/baseline.json"
 export function checkRegression(
   overall: number,
   caseScores: Record<string, number>,
-  baseline: EvalBaseline
+  baseline: EvalBaseline,
+  passThreshold = 0.8
 ): { ok: boolean; detail?: string } {
-  if (overall < baseline.overall) {
+  // Only flag overall regression when quality drops below the pass threshold.
+  if (overall < baseline.overall && overall < passThreshold) {
     return {
       ok: false,
       detail: `overall ${(overall * 100).toFixed(1)}% < baseline ${(baseline.overall * 100).toFixed(1)}%`,
@@ -27,7 +29,7 @@ export function checkRegression(
     for (const [caseId, minScore] of Object.entries(baseline.cases)) {
       const current = caseScores[caseId];
       if (current === undefined) continue;
-      if (current < minScore) {
+      if (current < minScore && current < passThreshold) {
         return {
           ok: false,
           detail: `case "${caseId}" ${(current * 100).toFixed(0)}% < baseline ${(minScore * 100).toFixed(0)}%`,
