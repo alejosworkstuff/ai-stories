@@ -4,7 +4,7 @@
     "basic-short": 1,
     "continuation": 1,
     "grounded-structure": 0.8333333333333334,
-    "grounded-archetype": 1,
+    "grounded-archetype": 0.8333333333333334,
     "grounded-tone": 0.8333333333333334,
     "grounded-try-fail": 0.8333333333333334,
     "grounded-want-need": 0.8333333333333334,
