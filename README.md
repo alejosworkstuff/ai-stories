@@ -6,6 +6,8 @@ A collaborative AI story generator built as a **production-minded AI-engineering
 
 > Built on the Vercel AI SDK's OpenAI-compatible provider, so the LLM backend is swappable. **Production default: Groq** (`llama-3.3-70b-versatile`, free tier). Point `AI_BASE_URL`/`AI_API_KEY` at OpenRouter, Google AI Studio (Gemini), OpenAI, or Anthropic to switch.
 
+**Architecture doc** — RAG pipeline (Neon pgvector → ingestion → retrieval), eval methodology (golden set, LLM judge, baseline), and safety model (guardrails, prompt-injection defense): **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
+
 ## Screenshots
 
 | Main form | Fallback mode | Dark mode |
@@ -29,75 +31,14 @@ A collaborative AI story generator built as a **production-minded AI-engineering
 
 ---
 
-## Architecture
-
-```
-Browser (stream reader)
-  → POST /api/generate-stories            api/generate-stories.ts
-      → rate limit + Zod validation + injection screen
-      → createStoryStreamer()             lib/ai/agent.ts
-          → streamText({ tools, stopWhen: stepCountIs(4) })
-              → tool: searchCorpus        lib/rag/retrieve.ts
-                  → embed query           lib/rag/embeddings.ts (AI SDK)
-                  → similaritySearch      lib/rag/store.ts  (pgvector / Neon)
-          → tokens streamed to response
-          → onFinish → telemetry          lib/ai/observability.ts
-```
-
-### Key modules
-
-| Area | File |
-| --- | --- |
-| Provider abstraction (swappable) | `lib/ai/provider.ts` |
-| Streaming agent + tool calling | `lib/ai/agent.ts` |
-| Structured (typed) generation | `lib/ai/story.ts` |
-| Zod schemas (request + story) | `lib/ai/schema.ts` |
-| System prompt + injection defense | `lib/ai/prompt.ts`, `lib/ai/guardrails.ts` |
-| Telemetry / observability | `lib/ai/observability.ts` |
-| RAG: chunk / embed / store / retrieve | `lib/rag/*.ts` |
-| API handler (streaming + error contracts) | `api/generate-stories.ts` |
-| Eval harness | `evals/{dataset,graders,run}.ts` |
-| Client streaming + fallback | `public/js/{api,app,ui}.js` |
-
----
-
-## RAG corpus
-
-A small storytelling-craft corpus lives in `corpus/` (`narrative-structure.md`, `tone-and-voice.md`, `character-archetypes.md`). It is chunked (paragraph-aware, with overlap), embedded, and upserted into a pgvector `documents` table. At request time the `searchCorpus` tool retrieves the top-k passages to ground craft decisions; retrieved text is fenced as untrusted context so it cannot inject instructions. When corpus guidance shapes the output, the model is instructed to cite the source file (e.g. `[narrative-structure.md]`).
-
-**Embeddings:** with `AI_BASE_URL` set, ingest/retrieval use the configured OpenAI-compatible embedding model. When `AI_BASE_URL` is unset, `npm run db:ingest` falls back to a local bag-of-words embedder (384 dims) so the RAG pipeline is runnable offline — swap to a real provider before production.
-
-Set up and ingest:
+## RAG quick start
 
 ```bash
 npm run db:setup     # CREATE EXTENSION vector + documents table + HNSW index
 npm run db:ingest    # chunk + embed + upsert corpus/*.md
 ```
 
----
-
-## Evals
-
-`npm run eval` runs the golden set in `evals/dataset.ts` through structured generation and scores each case with:
-
-- **Deterministic graders** (`evals/graders.ts`): schema validity, minimum paragraphs, choices, no prompt leakage, grounded citations.
-- **LLM-as-judge** (`evals/judge.ts`): relevance + fiction quality (enabled by default; set `EVAL_JUDGE=0` to skip).
-
-It exits non-zero when the overall score falls below `EVAL_THRESHOLD` (default `0.8`) or **regresses** below `evals/baseline.json`. After a confirmed green run against production, refresh the baseline with `npm run eval:baseline`.
-
-CI runs `npm run eval:ci` in a dedicated job when `AI_API_KEY`, `AI_BASE_URL`, and `DATABASE_URL` secrets are configured; otherwise it skips with a warning. Deterministic graders are unit-tested offline (`tests/graders.test.ts`, `tests/judge.test.ts`, `tests/regression.test.ts`).
-
----
-
-## Security & guardrails
-
-- **Prompt-injection screening** (`lib/ai/guardrails.ts`) rejects obvious override attempts with `400 unsafe_request`.
-- **Retrieved-content sanitization** strips injection-shaped lines from RAG passages before fencing them as untrusted context.
-- **Output guardrails** validate structured stories against the Zod schema (with one repair retry) and screen streamed prose for prompt/tool leakage (`422 unsafe_output` before the first token).
-- **Untrusted-content fencing** wraps retrieved passages so the model treats them as data, not instructions.
-- **Rate limiting** — fixed-window per-IP (`lib/rate-limit.ts`), `X-RateLimit-Remaining` / `Retry-After`.
-- **Security headers** via `vercel.json` (strict CSP `default-src 'self'`, HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, COOP).
-- **No secret leakage** — provider errors map to `402` (credits) or `500` (generic) with no stack traces in the body.
+Pipeline details, eval methodology, and the three-zone safety model → **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 
 ---
 
@@ -191,9 +132,8 @@ npm run dev                   # http://localhost:3000
 
 ## Roadmap (next)
 
-- Tailwind + shadcn on the UI (keyword parity) and React Query for retrieval state.
-- Persistent conversation memory keyed by session.
-- LLM-as-judge eval grader alongside the deterministic ones.
+- Tailwind + shadcn on the UI (keyword parity).
+- Persistent conversation memory keyed by session (Neon/Clerk).
 
 ## Commit conventions
 
