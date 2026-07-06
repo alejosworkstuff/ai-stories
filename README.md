@@ -11,7 +11,7 @@ A collaborative AI story generator built as a **production-minded AI-engineering
 ## Screenshots
 
 | Main form | Fallback mode | Dark mode |
-|:---:|:---:|:---:|
+| --- | --- | --- |
 | ![Main form](./docs/screenshots/main.webp) | ![Fallback mode](./docs/screenshots/fallback.webp) | ![Dark mode](./docs/screenshots/dark.webp) |
 
 ---
