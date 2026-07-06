@@ -126,13 +126,18 @@ npm run dev                   # http://localhost:3000
 - PostgreSQL + pgvector on Neon (`@neondatabase/serverless`)
 - Zod (validation + typed outputs)
 - Vitest + Playwright; GitHub Actions CI
-- HTML + vanilla ES modules (client)
+- HTML + vanilla ES modules + **Tailwind CSS** (PostCSS build → `public/css/app.css`)
+
+---
+
+## UI (Tailwind)
+
+Hand-written CSS was replaced with a Tailwind v3 pipeline (`styles/main.css` → `npm run build:css`). The client stays vanilla ES modules; utility classes cover layout, forms, and dark mode (`class` on `<html>`). Complex footer hover effects and the collapsible history sidebar live in `@layer components`.
 
 ---
 
 ## Roadmap (next)
 
-- Tailwind + shadcn on the UI (keyword parity).
 - Persistent conversation memory keyed by session (Neon/Clerk).
 
 ## Commit conventions

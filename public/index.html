@@ -1,94 +1,152 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AI Stories Generator</title>
-  <link rel="stylesheet" href="./css/variables.css" />
-  <link rel="stylesheet" href="./css/base.css" />
-  <link rel="stylesheet" href="./css/layout.css" />
-  <link rel="stylesheet" href="./css/history.css" />
-  <link rel="stylesheet" href="./css/footer.css" />
-  <link rel="stylesheet" href="./css/modal.css" />
-  <link rel="stylesheet" href="./css/theme-toggle.css" />
+  <link rel="stylesheet" href="./css/app.css" />
 </head>
-<body>
-  <div class="app">
+<body class="flex min-h-full flex-col bg-stone-200 pb-28 text-stone-900 transition-colors dark:bg-neutral-900 dark:text-stone-100">
+  <div class="app grid min-h-0 w-full flex-1 grid-cols-[auto_1fr] gap-5 p-5 pb-0 max-md:grid-cols-1 max-md:gap-3 max-md:p-3">
     <aside class="history-box expanded" id="historyBox">
-      <div class="history-header">
-        <h3>Story History</h3>
-        <button id="clearHistory" class="history-clear" type="button" disabled>Clear all</button>
+      <div class="history-panel history-header mb-1 flex shrink-0 items-center justify-between gap-2 border-b border-stone-400 pb-1.5 dark:border-neutral-600">
+        <h3 class="m-0 text-base font-semibold">Story History</h3>
+        <button
+          id="clearHistory"
+          class="history-clear shrink-0 cursor-pointer rounded border border-stone-400 bg-transparent px-2 py-1 text-[0.7rem] font-semibold text-stone-900 transition hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-600 dark:text-stone-100 dark:hover:bg-neutral-700"
+          type="button"
+          disabled
+        >
+          Clear all
+        </button>
       </div>
-      <ul id="history"></ul>
+      <ul id="history" class="m-0 flex-1 list-none p-0"></ul>
       <button
         id="toggleHistory"
-        class="history-toggle"
+        class="history-toggle mt-auto flex w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md border-0 bg-stone-300 px-3 py-2.5 text-xs font-semibold tracking-wide text-stone-600 transition hover:bg-stone-400 hover:text-stone-800 dark:bg-neutral-700 dark:text-stone-300 dark:hover:bg-neutral-600 dark:hover:text-stone-100"
         type="button"
         aria-label="Collapse history"
         aria-expanded="true"
       >
-        <svg class="history-toggle__icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <svg class="history-toggle__icon h-4 w-4 shrink-0 transition-transform duration-300" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
           <path fill="currentColor" d="M10 3L5 8l5 5" />
         </svg>
         <span class="history-toggle__label">Collapse</span>
       </button>
     </aside>
 
-    <div class="card">
-      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">Dark mode</button>
-      <h1>AI Stories Generator</h1>
+    <div class="card relative mx-auto flex w-full max-w-[900px] min-h-0 flex-col rounded-lg bg-stone-50 p-6 transition-colors dark:bg-neutral-800 max-md:p-4">
+      <button
+        id="themeToggle"
+        class="absolute right-5 top-5 cursor-pointer rounded-md border-0 bg-stone-300 px-3.5 py-2 text-sm font-semibold text-stone-600 transition hover:bg-stone-400 hover:text-stone-800 dark:bg-neutral-700 dark:text-stone-300 dark:hover:bg-neutral-600 dark:hover:text-stone-100 max-md:right-4 max-md:top-[7.5rem]"
+        type="button"
+        aria-label="Toggle dark mode"
+      >
+        Dark mode
+      </button>
 
-      <h3>Story</h3>
-      <div id="output"><p class="hint">Your story will appear here</p></div>
-      <div class="story-actions">
-        <button id="copyBtn">Copy story</button>
+      <header class="mb-4 pr-28 max-md:pr-0">
+        <p class="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-600 dark:text-blue-400">RAG · Streaming · Evals</p>
+        <h1 class="m-0 text-2xl font-bold tracking-tight sm:text-3xl">AI Stories Generator</h1>
+      </header>
+
+      <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Story</h2>
+      <div
+        id="output"
+        class="mb-4 min-h-[50vh] flex-1 overflow-y-auto rounded-lg border border-stone-200 bg-white/80 p-5 dark:border-neutral-700 dark:bg-neutral-900/80 max-md:min-h-[40vh]"
+      >
+        <p class="hint">Your story will appear here</p>
       </div>
-      <div id="stats" class="stats"></div>
 
-      <div class="controls-box">
-        <label>Choose random words!</label>
-        <input id="seed" placeholder="Ex: A violinist in Buenos Aires" />
-        <input id="tone" placeholder="Choose genre or tone (ex: romantic cyberpunk)" />
+      <div class="story-actions mb-5">
+        <button
+          id="copyBtn"
+          class="hidden cursor-pointer rounded-md border-0 bg-blue-600 px-4 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          type="button"
+        >
+          Copy story
+        </button>
+      </div>
+
+      <div id="stats" class="stats mb-1 text-sm text-stone-500 dark:text-stone-400"></div>
+
+      <div class="controls-box mt-5 rounded-lg bg-stone-100 p-4 dark:bg-neutral-800/80">
+        <label class="text-sm font-medium text-stone-700 dark:text-stone-300">Choose random words!</label>
+        <input
+          id="seed"
+          class="mt-2 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-neutral-600 dark:bg-neutral-900 dark:text-stone-100"
+          placeholder="Ex: A violinist in Buenos Aires"
+        />
+        <input
+          id="tone"
+          class="mt-2 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-neutral-600 dark:bg-neutral-900 dark:text-stone-100"
+          placeholder="Choose genre or tone (ex: romantic cyberpunk)"
+        />
         <input id="length" type="hidden" value="short" />
-        <div class="custom-select" id="lengthDropdown">
+        <div class="custom-select relative mt-2 w-full" id="lengthDropdown">
           <button
             id="lengthToggle"
-            class="custom-select__button"
+            class="custom-select__button flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border border-stone-300 bg-white px-3 py-2 text-left text-stone-900 transition hover:border-stone-400 dark:border-neutral-600 dark:bg-neutral-900 dark:text-stone-100 dark:hover:border-neutral-500"
             type="button"
             aria-haspopup="listbox"
             aria-expanded="false"
             aria-controls="lengthOptions"
           >
             <span id="lengthValue">Short</span>
-            <span class="custom-select__arrow" aria-hidden="true">v</span>
+            <span class="custom-select__arrow text-sm text-stone-500 transition-transform dark:text-stone-400" aria-hidden="true">▼</span>
           </button>
-          <ul class="custom-select__list" id="lengthOptions" role="listbox" aria-label="Story length">
+          <ul
+            class="custom-select__list absolute left-0 right-0 top-[calc(100%+6px)] z-10 hidden list-none rounded-lg border border-stone-300 bg-white p-1.5 shadow-xl dark:border-neutral-600 dark:bg-neutral-900"
+            id="lengthOptions"
+            role="listbox"
+            aria-label="Story length"
+          >
             <li role="option" aria-selected="true">
-              <button type="button" data-value="short">Short</button>
+              <button class="w-full cursor-pointer rounded-md border-0 bg-transparent px-2.5 py-2 text-left text-stone-900 dark:text-stone-100" type="button" data-value="short">Short</button>
             </li>
             <li role="option" aria-selected="false">
-              <button type="button" data-value="medium">Medium</button>
+              <button class="w-full cursor-pointer rounded-md border-0 bg-transparent px-2.5 py-2 text-left text-stone-900 dark:text-stone-100" type="button" data-value="medium">Medium</button>
             </li>
             <li role="option" aria-selected="false">
-              <button type="button" data-value="long">Large</button>
+              <button class="w-full cursor-pointer rounded-md border-0 bg-transparent px-2.5 py-2 text-left text-stone-900 dark:text-stone-100" type="button" data-value="long">Large</button>
             </li>
           </ul>
         </div>
         <input
           id="continuePrompt"
+          class="mt-2 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-neutral-600 dark:bg-neutral-900 dark:text-stone-100"
           placeholder="Optional: guide the next part (ex: a sudden betrayal)"
         />
-        <div class="buttons">
-          <button id="btn">Create</button>
-          <button id="regenBtn">Regenerate</button>
-          <button id="continueBtn" disabled>Continue</button>
+        <div class="buttons mt-3 flex gap-2.5 max-md:flex-col">
+          <button
+            id="btn"
+            class="cursor-pointer rounded-md border-0 bg-blue-600 px-4 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 max-md:w-full"
+            type="button"
+          >
+            Create
+          </button>
+          <button
+            id="regenBtn"
+            class="cursor-pointer rounded-md border-0 bg-blue-600 px-4 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 max-md:w-full"
+            type="button"
+          >
+            Regenerate
+          </button>
+          <button
+            id="continueBtn"
+            class="cursor-pointer rounded-md border-0 bg-blue-600 px-4 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 max-md:w-full"
+            type="button"
+            disabled
+          >
+            Continue
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <footer class="site-footer">
-    <div class="footer-inner">
+    <div class="footer-inner mx-auto flex max-w-screen-xl flex-wrap items-center justify-center gap-3.5 px-2">
       <a
         class="footer-link portfolio-link"
         href="https://alejosworkstuff.github.io/portfolio/"

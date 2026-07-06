@@ -18,6 +18,7 @@ export function loadHistory(historyEl, clearBtn) {
 
   saved.forEach((story, index) => {
     const li = document.createElement("li");
+    li.className = "history-item";
     li.dataset.index = String(index);
 
     const text = document.createElement("span");
@@ -87,7 +88,7 @@ export function bindHistoryDelete(historyEl, clearBtn, { onDeleteAt, onClearAll 
 }
 
 export function renderStory(output, { outputEl, copyBtn, statsEl, updateStats }) {
-  if (copyBtn) copyBtn.style.display = "block";
+  if (copyBtn) copyBtn.classList.remove("hidden");
   if (!outputEl) return;
 
   const text = Array.isArray(output) ? output.join("\n\n") : output;
@@ -98,7 +99,7 @@ export function renderStory(output, { outputEl, copyBtn, statsEl, updateStats })
 
 // Live render of the accumulated token stream (escaped on every update).
 export function appendStoryChunk(text, { outputEl, copyBtn, statsEl, updateStats }) {
-  if (copyBtn) copyBtn.style.display = "block";
+  if (copyBtn) copyBtn.classList.remove("hidden");
   if (!outputEl) return;
   outputEl.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
   updateStats(text);
