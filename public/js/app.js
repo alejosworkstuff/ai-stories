@@ -11,6 +11,7 @@ import {
   bindHistoryDelete,
   renderStory,
   appendStoryChunk,
+  completeStoryStream,
   renderError,
   renderGenerating,
   updateStats,
@@ -72,19 +73,6 @@ function setContinueEnabled(enabled) {
   ELEMENTS.continueBtn.disabled = !enabled;
 }
 
-function renderCurrentStory() {
-  const story = getStoryText();
-  renderStory(story, {
-    outputEl: ELEMENTS.out,
-    copyBtn: ELEMENTS.copyBtn,
-    statsEl: ELEMENTS.stats,
-    updateStats: (text) => updateStats(text, ELEMENTS.stats),
-  });
-  saveStory(story);
-  loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
-  setContinueEnabled(hasActiveConversation());
-}
-
 async function runStoryRequest({ isContinuation }) {
   const seed = (ELEMENTS.seedEl?.value ?? "").trim();
   const tone = (ELEMENTS.toneEl?.value ?? "").trim();
@@ -130,7 +118,14 @@ async function runStoryRequest({ isContinuation }) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  function useLocalFallback(message) {
+  const streamUi = {
+    outputEl: ELEMENTS.out,
+    copyBtn: ELEMENTS.copyBtn,
+    statsEl: ELEMENTS.stats,
+    updateStats: (value) => updateStats(value, ELEMENTS.stats),
+  };
+
+  async function useLocalFallback(message) {
     if (!fallbackPopupShown) {
       fallbackPopupShown = true;
       showFallbackModal(message);
@@ -139,7 +134,15 @@ async function runStoryRequest({ isContinuation }) {
     const storySeed = seed || messages[0]?.content || "the story";
     const newPart = generateLocalStory(storySeed, tone, length);
     messages.push({ role: "assistant", content: newPart });
-    renderCurrentStory();
+    appendStoryChunk(newPart, streamUi);
+    await completeStoryStream(newPart, streamUi);
+    const fullStory = getStoryText();
+    if (fullStory !== newPart) {
+      renderStory(fullStory, { ...streamUi, animate: false });
+    }
+    saveStory(fullStory);
+    loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
+    setContinueEnabled(hasActiveConversation());
   }
 
   try {
@@ -150,12 +153,7 @@ async function runStoryRequest({ isContinuation }) {
         signal: controller.signal,
         onToken: (chunk) => {
           streamed += chunk;
-          appendStoryChunk(streamed, {
-            outputEl: ELEMENTS.out,
-            copyBtn: ELEMENTS.copyBtn,
-            statsEl: ELEMENTS.stats,
-            updateStats: (value) => updateStats(value, ELEMENTS.stats),
-          });
+          appendStoryChunk(streamed, streamUi);
         },
       }
     );
@@ -165,7 +163,7 @@ async function runStoryRequest({ isContinuation }) {
 
     if (!res.ok || !story) {
       const { code } = normalizeApiError(res.status, data ?? {});
-      useLocalFallback(FALLBACK_MESSAGE[code] ?? FALLBACK_MESSAGE.HTTP);
+      await useLocalFallback(FALLBACK_MESSAGE[code] ?? FALLBACK_MESSAGE.HTTP);
       return;
     }
 
@@ -173,10 +171,17 @@ async function runStoryRequest({ isContinuation }) {
     if (isContinuation && ELEMENTS.continuePromptEl) {
       ELEMENTS.continuePromptEl.value = "";
     }
-    renderCurrentStory();
+    await completeStoryStream(story, streamUi);
+    const fullStory = getStoryText();
+    if (fullStory !== story) {
+      renderStory(fullStory, { ...streamUi, animate: false });
+    }
+    saveStory(fullStory);
+    loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
+    setContinueEnabled(hasActiveConversation());
   } catch {
     clearTimeout(timeoutId);
-    useLocalFallback("Using local generator");
+    await useLocalFallback("Using local generator");
   } finally {
     setLoading(false, {
       btn: ELEMENTS.btn,

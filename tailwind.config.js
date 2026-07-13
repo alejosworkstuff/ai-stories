@@ -21,7 +21,7 @@ export default {
         fadeIn: "fadeIn 0.2s ease-out",
         slideIn: "slideIn 0.25s ease-out",
         lavaBreathe: "lavaBreathe 2.6s ease-in-out infinite",
-        lavaSwirl: "lavaSwirl 2.9s linear infinite",
+        lavaSwirl: "lavaSwirl 2.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite",
       },
       keyframes: {
         pulseHint: {

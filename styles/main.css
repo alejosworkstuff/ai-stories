@@ -16,7 +16,8 @@
 
 @layer components {
   .history-box {
-    @apply flex flex-col self-stretch overflow-y-auto rounded-lg bg-stone-100 p-3 transition-[width,max-width] duration-300 ease-out dark:bg-neutral-800;
+    @apply flex flex-col self-stretch overflow-y-auto rounded-lg bg-stone-100 p-3 transition-[width,max-width] duration-300 dark:bg-neutral-800;
+    transition-timing-function: cubic-bezier(0.34, 1.3, 0.64, 1);
     width: 400px;
     min-width: 56px;
     max-width: 400px;
@@ -48,6 +49,16 @@
     @apply flex items-start gap-1.5 border-b border-stone-200 px-1.5 py-1.5 text-stone-900 transition-colors hover:bg-stone-200 dark:border-neutral-700 dark:text-stone-100 dark:hover:bg-neutral-700;
   }
 
+  .history-item--pending {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+
+  .history-item--in {
+    animation: history-enter 0.58s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+    animation-delay: calc(var(--stagger, 0) * 55ms);
+  }
+
   .history-item__text {
     @apply min-w-0 flex-1 cursor-pointer leading-snug;
   }
@@ -58,6 +69,62 @@
 
   .history-box li:hover .history-item__delete {
     @apply opacity-85;
+  }
+
+  #output {
+    @apply transition-[opacity,transform] duration-500;
+    transition-timing-function: cubic-bezier(0.34, 1.3, 0.64, 1);
+  }
+
+  #output.is-revealing {
+    animation: output-enter 0.55s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+  }
+
+  #output pre {
+    @apply relative;
+  }
+
+  #output pre::after {
+    content: "";
+    @apply ml-0.5 inline-block h-[1.05em] w-[0.55ch] translate-y-[0.12em] bg-current align-baseline opacity-0;
+  }
+
+  #output.is-typing pre::after {
+    opacity: 0.55;
+    animation: caret-blink 0.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+
+  @keyframes caret-blink {
+    0%,
+    45% {
+      opacity: 0.55;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes output-enter {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes history-enter {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   .custom-select.is-open .custom-select__list {
@@ -160,7 +227,7 @@
     .social-bubble:hover::after {
       @apply opacity-[0.98];
       transform: translateY(0) scale(1.06);
-      animation: lavaSwirl 2.9s linear infinite;
+      animation: lavaSwirl 2.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
     }
 
     .social-bubble:hover .social-icon {
@@ -238,6 +305,20 @@
     .social-bubble::before,
     .social-bubble::after {
       animation: none !important;
+      transition: none !important;
+    }
+
+    .history-item,
+    .history-item--pending,
+    .history-item--in,
+    #output.is-revealing,
+    #output.is-typing pre::after {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    #output {
       transition: none !important;
     }
   }
