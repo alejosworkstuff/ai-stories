@@ -1,0 +1,24 @@
+---
+description: Harness gates and rejected ideas for ia-stories agent sessions
+alwaysApply: true
+---
+
+# Harness (ia-stories)
+
+Before coding, read root [`AGENTS.md`](../../AGENTS.md). Full design: [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
+
+## Gates before "done"
+
+1. `npm run typecheck`
+2. `npm run test`
+3. `npm run test:e2e` if UI or API user-facing contract changed
+4. Run the app and verify the claimed behaviour
+
+Use `npm run ci` / `npm run ci:full` when in doubt. For prompt/RAG/model changes, run evals (`npm run eval` / `eval:ci`); do not rewrite `evals/baseline.json` without an intentional green review.
+
+## Hard constraints
+
+- Keep vanilla client + Vercel Functions — do not migrate this repo to React/Next.
+- Keep three-zone guardrails (sanitize + fence retrieved context).
+- Groq + `FORCE_LOCAL_EMBEDDINGS=1` is the production embedding story unless the user plans a provider/dim migration.
+- Do not invent enterprise ops claims (OTel/AWS/K8s) that are not in the repo.

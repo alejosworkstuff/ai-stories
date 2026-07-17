@@ -8,6 +8,8 @@ A collaborative AI story generator built as a **production-minded AI-engineering
 
 **Architecture doc** — RAG pipeline (Neon pgvector → ingestion → retrieval), eval methodology (golden set, LLM judge, baseline), and safety model (guardrails, prompt-injection defense): **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 
+**Agent harness** — session rules, four gates, and rejected ideas for AI-assisted work: **[AGENTS.md](./AGENTS.md)**
+
 ## Screenshots
 
 | Main form | Fallback mode | Dark mode |
