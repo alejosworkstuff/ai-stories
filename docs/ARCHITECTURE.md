@@ -115,7 +115,7 @@ Before passages reach the model, each chunk passes through `prepareRetrievedCont
 
 ### 1.5 Source citations
 
-Grounded stories cite corpus filenames in the output (e.g. `[narrative-structure.md]`). The structured eval path checks `story.groundedOn` against `expectSources` in the golden set. Citations are verifiable in the live app stream.
+Grounding must not leak into reader-facing prose. The streaming prompt forbids bracket citations like `[narrative-structure.md]` in the story text; the client also strips any leftover `*.md` citations before display/save. The structured eval path records sources in `story.groundedOn` and checks that field against `expectSources` in the golden set.
 
 ### 1.6 RAG tradeoffs (interview-ready)
 

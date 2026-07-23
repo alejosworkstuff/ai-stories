@@ -45,7 +45,7 @@ export async function generateStoryObject(
   const retrieved =
     params.grounded && lastUser ? await retrieve(lastUser.content, 4) : [];
   const grounding = retrieved.length
-    ? "\nReference passages (cite as [source-file] when used):\n" +
+    ? "\nReference passages (list used source filenames only in groundedOn; never insert them into paragraphs):\n" +
       retrieved
         .map((passage) => `[${passage.source}] ${prepareRetrievedContent(passage.content)}`)
         .join("\n")

@@ -1,4 +1,4 @@
-import { escapeHtml } from "./utils.js";
+import { escapeHtml, stripCorpusCitations } from "./utils.js";
 import { getStories } from "./storage.js";
 import {
   createTypewriter,
@@ -12,7 +12,7 @@ let activeTypewriter = null;
 let disconnectHistoryObserver = null;
 
 function storyPreview(story) {
-  const safeStory = String(story);
+  const safeStory = stripCorpusCitations(story);
   return safeStory.length > PREVIEW_LENGTH
     ? safeStory.slice(0, PREVIEW_LENGTH) + "..."
     : safeStory;
@@ -20,7 +20,7 @@ function storyPreview(story) {
 
 function paintStoryText(outputEl, text) {
   if (!outputEl) return;
-  outputEl.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
+  outputEl.innerHTML = `<pre>${escapeHtml(stripCorpusCitations(text))}</pre>`;
 }
 
 function stopTypewriter({ snap = false } = {}) {
@@ -159,7 +159,9 @@ export function renderStory(output, { outputEl, copyBtn, statsEl, updateStats, a
   if (copyBtn) copyBtn.classList.remove("hidden");
   if (!outputEl) return;
 
-  const text = Array.isArray(output) ? output.join("\n\n") : output;
+  const text = stripCorpusCitations(
+    Array.isArray(output) ? output.join("\n\n") : output
+  );
   paintStoryText(outputEl, text);
   updateStats(text);
   if (animate) triggerOutputReveal(outputEl);
@@ -173,13 +175,13 @@ export function renderStory(output, { outputEl, copyBtn, statsEl, updateStats, a
 export function appendStoryChunk(text, { outputEl, copyBtn, statsEl, updateStats }) {
   if (!outputEl) return;
   const tw = ensureTypewriter(outputEl, { copyBtn, updateStats });
-  tw.setTarget(text);
+  tw.setTarget(stripCorpusCitations(text));
 }
 
 /** Wait for the typewriter to catch up to `text`, then clear the stream session. */
 export async function completeStoryStream(text, { outputEl, copyBtn, statsEl, updateStats }) {
   if (!outputEl) return;
-  const finalText = String(text ?? "");
+  const finalText = stripCorpusCitations(text);
 
   if (!activeTypewriter) {
     renderStory(finalText, { outputEl, copyBtn, statsEl, updateStats });

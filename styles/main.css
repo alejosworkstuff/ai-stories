@@ -26,10 +26,12 @@
   .history-box:not(.expanded) {
     width: 56px;
     max-width: 56px;
+    @apply overflow-hidden;
   }
 
   .history-box:not(.expanded) .history-panel,
-  .history-box:not(.expanded) h3 {
+  .history-box:not(.expanded) h3,
+  .history-box:not(.expanded) ul {
     @apply hidden;
   }
 
@@ -282,14 +284,6 @@
 
     .history-box:not(.expanded) {
       @apply max-h-14 py-2;
-    }
-
-    .history-box:not(.expanded) .history-panel {
-      @apply hidden;
-    }
-
-    .history-box:not(.expanded) ul {
-      @apply pointer-events-none max-h-0 opacity-0;
     }
 
     .site-footer {

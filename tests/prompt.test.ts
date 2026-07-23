@@ -10,10 +10,11 @@ describe("buildSystemPrompt", () => {
     expect(buildSystemPrompt(undefined, "short")).not.toContain("Tone:");
   });
 
-  it("includes citation and prompt-injection guidance", () => {
+  it("forbids inline corpus citations and includes prompt-injection guidance", () => {
     const prompt = buildSystemPrompt("noir", "long");
     expect(prompt).toContain("untrusted");
     expect(prompt).toContain("searchCorpus");
+    expect(prompt).toContain("Never insert corpus filenames");
     expect(prompt).toContain("[narrative-structure.md]");
   });
 });

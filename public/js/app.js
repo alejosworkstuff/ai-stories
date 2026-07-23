@@ -1,4 +1,4 @@
-import { whenReady } from "./utils.js";
+import { whenReady, stripCorpusCitations } from "./utils.js";
 import { RANDOM_SEEDS } from "./constants.js";
 import { getStories, saveStory, removeStoryAt, clearStories } from "./storage.js";
 import { streamStory } from "./api.js";
@@ -132,7 +132,7 @@ async function runStoryRequest({ isContinuation }) {
     }
 
     const storySeed = seed || messages[0]?.content || "the story";
-    const newPart = generateLocalStory(storySeed, tone, length);
+    const newPart = stripCorpusCitations(generateLocalStory(storySeed, tone, length));
     messages.push({ role: "assistant", content: newPart });
     appendStoryChunk(newPart, streamUi);
     await completeStoryStream(newPart, streamUi);
@@ -159,7 +159,7 @@ async function runStoryRequest({ isContinuation }) {
     );
     clearTimeout(timeoutId);
 
-    const story = String(text || streamed).trim();
+    const story = stripCorpusCitations(String(text || streamed).trim());
 
     if (!res.ok || !story) {
       const { code } = normalizeApiError(res.status, data ?? {});
@@ -220,12 +220,13 @@ async function copyStory() {
 }
 
 function onSelectStory(story) {
+  const clean = stripCorpusCitations(story);
   const seed = (ELEMENTS.seedEl?.value ?? "").trim() || "Restored story";
   messages = [
     { role: "user", content: seed },
-    { role: "assistant", content: story },
+    { role: "assistant", content: clean },
   ];
-  renderStory(story, {
+  renderStory(clean, {
     outputEl: ELEMENTS.out,
     copyBtn: ELEMENTS.copyBtn,
     statsEl: ELEMENTS.stats,
@@ -295,6 +296,8 @@ function bindEvents() {
       "aria-label",
       isExpanded ? "Collapse history" : "Expand history"
     );
+    const label = ELEMENTS.historyToggleBtn?.querySelector(".history-toggle__label");
+    if (label) label.textContent = isExpanded ? "Collapse" : "Expand";
   });
 
   handleHistoryClick(ELEMENTS.historyEl, onSelectStory);
