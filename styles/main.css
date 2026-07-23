@@ -16,17 +16,17 @@
 
 @layer components {
   .history-box {
-    @apply flex flex-col self-stretch overflow-y-auto rounded-lg bg-stone-100 p-3 transition-[width,max-width] duration-300 dark:bg-neutral-800;
+    @apply flex h-full min-h-0 flex-col self-stretch overflow-hidden rounded-lg bg-stone-100 p-2 transition-[width,max-width] duration-300 dark:bg-neutral-800;
     transition-timing-function: cubic-bezier(0.34, 1.3, 0.64, 1);
-    width: 400px;
-    min-width: 56px;
-    max-width: 400px;
+    width: 280px;
+    min-width: 40px;
+    max-width: 280px;
   }
 
   .history-box:not(.expanded) {
-    width: 56px;
-    max-width: 56px;
-    @apply overflow-hidden;
+    width: 40px;
+    max-width: 40px;
+    @apply items-center overflow-hidden p-1.5;
   }
 
   .history-box:not(.expanded) .history-panel,
@@ -35,12 +35,8 @@
     @apply hidden;
   }
 
-  .history-box:not(.expanded) .history-toggle {
-    @apply px-2 py-3;
-  }
-
-  .history-box:not(.expanded) .history-toggle__label {
-    @apply hidden;
+  .history-box:not(.expanded) .history-toolbar {
+    @apply mb-0 justify-center;
   }
 
   .history-box:not(.expanded) .history-toggle__icon {
@@ -48,7 +44,8 @@
   }
 
   .history-item {
-    @apply flex items-start gap-1.5 border-b border-stone-200 px-1.5 py-1.5 text-stone-900 transition-colors hover:bg-stone-200 dark:border-neutral-700 dark:text-stone-100 dark:hover:bg-neutral-700;
+    @apply relative flex items-start gap-1 border-b border-stone-200 px-1 py-1 text-xs text-stone-900 transition-colors hover:bg-stone-200 dark:border-neutral-700 dark:text-stone-100 dark:hover:bg-neutral-700;
+    will-change: transform, opacity;
   }
 
   .history-item--pending {
@@ -56,17 +53,38 @@
     transform: translateY(14px) scale(0.98);
   }
 
-  .history-item--in {
+  .history-item.is-entering {
     animation: history-enter 0.58s cubic-bezier(0.34, 1.45, 0.64, 1) both;
     animation-delay: calc(var(--stagger, 0) * 55ms);
+  }
+
+  .history-item--exiting {
+    @apply pointer-events-none;
+  }
+
+  .history-item--flipping {
+    @apply pointer-events-none;
+  }
+
+  .history-item--lifting {
+    @apply rounded-md bg-stone-50 shadow-md dark:bg-neutral-700;
+    z-index: 5;
   }
 
   .history-item__text {
     @apply min-w-0 flex-1 cursor-pointer leading-snug;
   }
 
+  .history-item__favorite {
+    @apply h-5 w-5 shrink-0 cursor-pointer rounded border-0 bg-transparent text-sm leading-none text-stone-400 transition hover:bg-stone-200 hover:text-amber-500 dark:text-stone-500 dark:hover:bg-neutral-700 dark:hover:text-amber-400;
+  }
+
+  .history-item__favorite.is-active {
+    @apply text-amber-500 dark:text-amber-400;
+  }
+
   .history-item__delete {
-    @apply h-6 w-6 shrink-0 cursor-pointer rounded border-0 bg-transparent text-lg leading-none text-stone-900 opacity-55 transition hover:bg-stone-200 hover:opacity-100 dark:text-stone-100 dark:hover:bg-neutral-700;
+    @apply h-5 w-5 shrink-0 cursor-pointer rounded border-0 bg-transparent text-base leading-none text-stone-900 opacity-55 transition hover:bg-stone-200 hover:opacity-100 dark:text-stone-100 dark:hover:bg-neutral-700;
   }
 
   .history-box li:hover .history-item__delete {
@@ -83,7 +101,7 @@
   }
 
   #output pre {
-    @apply relative;
+    @apply relative py-1 text-sm leading-relaxed;
   }
 
   #output pre::after {
@@ -143,15 +161,15 @@
   }
 
   .site-footer {
-    @apply fixed bottom-3 left-1/2 z-[25] w-[min(1100px,calc(100%-24px))] -translate-x-1/2 rounded-full border border-stone-300/80 bg-stone-50/90 px-2.5 py-2 shadow-xl backdrop-blur-sm transition-colors dark:border-neutral-600/80 dark:bg-neutral-800/90;
+    @apply fixed bottom-2 left-1/2 z-[25] w-[min(900px,calc(100%-16px))] -translate-x-1/2 rounded-full border border-stone-300/80 bg-stone-50/90 px-2 py-1.5 shadow-lg backdrop-blur-sm transition-colors dark:border-neutral-600/80 dark:bg-neutral-800/90;
   }
 
   .portfolio-link {
-    @apply relative isolate inline-flex h-[50px] min-w-[120px] items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-white px-5 font-semibold text-stone-900 no-underline transition dark:border-neutral-700 dark:bg-neutral-900 dark:text-stone-100;
+    @apply relative isolate inline-flex h-9 min-w-[96px] items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-900 no-underline transition dark:border-neutral-700 dark:bg-neutral-900 dark:text-stone-100;
   }
 
   .social-bubble {
-    @apply relative isolate inline-flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-full border border-stone-300/85 bg-white no-underline transition dark:border-neutral-600/85 dark:bg-neutral-900;
+    @apply relative isolate inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-stone-300/85 bg-white no-underline transition dark:border-neutral-600/85 dark:bg-neutral-900;
   }
 
   .portfolio-link::before,
@@ -206,7 +224,7 @@
   }
 
   .social-icon {
-    @apply relative z-[2] h-[22px] w-[22px] transition;
+    @apply relative z-[2] h-[18px] w-[18px] transition;
     transition: transform 520ms cubic-bezier(0.2, 0.86, 0.38, 0.99), filter 240ms ease;
   }
 
@@ -251,16 +269,50 @@
     @apply fixed inset-0 z-[10000] flex animate-fadeIn items-center justify-center bg-black/50;
   }
 
-  .fallback-modal {
+  .fallback-modal,
+  .confirm-modal {
     @apply max-w-sm animate-slideIn rounded-xl border-[3px] border-red-700 bg-stone-50 px-8 py-6 text-center shadow-2xl dark:bg-neutral-800;
   }
 
-  .fallback-modal p {
+  .confirm-modal {
+    @apply border-stone-400 dark:border-neutral-500;
+  }
+
+  .fallback-modal p,
+  .confirm-modal p {
     @apply mb-5 text-lg font-semibold leading-relaxed text-red-700;
+  }
+
+  .confirm-modal p {
+    @apply text-stone-800 dark:text-stone-100;
   }
 
   .fallback-dismiss {
     @apply cursor-pointer rounded-md border-0 bg-red-700 px-6 py-2.5 text-base font-semibold text-white transition hover:bg-red-800;
+  }
+
+  .confirm-modal__actions {
+    @apply flex flex-col items-stretch gap-2;
+  }
+
+  .confirm-cancel {
+    @apply cursor-pointer rounded-md border border-stone-400 bg-transparent px-4 py-2 text-sm font-semibold text-stone-800 transition hover:bg-stone-200 dark:border-neutral-500 dark:text-stone-100 dark:hover:bg-neutral-700;
+  }
+
+  .confirm-ok {
+    @apply cursor-pointer rounded-md border-0 bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800;
+  }
+
+  .confirm-ok--soft {
+    @apply border border-red-700/40 bg-transparent text-red-700 hover:bg-red-50 dark:border-red-400/40 dark:text-red-400 dark:hover:bg-neutral-700;
+  }
+
+  .history-menu.is-open .history-menu__list {
+    @apply block;
+  }
+
+  .history-menu__item:disabled {
+    @apply cursor-not-allowed opacity-45;
   }
 
   .hint {
@@ -275,19 +327,23 @@
     .history-box,
     .history-box.expanded,
     .history-box:not(.expanded) {
-      @apply w-full max-w-full min-w-0;
+      @apply w-full max-w-full min-w-0 items-stretch;
     }
 
     .history-box {
-      @apply max-h-80 overflow-hidden transition-[max-height,padding] duration-300 ease-out;
+      @apply h-auto max-h-36 overflow-hidden transition-[max-height,padding] duration-300 ease-out;
     }
 
     .history-box:not(.expanded) {
-      @apply max-h-14 py-2;
+      @apply max-h-10 p-1.5;
+    }
+
+    .history-box:not(.expanded) .history-toolbar {
+      @apply justify-start;
     }
 
     .site-footer {
-      @apply bottom-2 w-[calc(100%-16px)] rounded-2xl;
+      @apply bottom-1.5 w-[calc(100%-12px)] rounded-2xl;
     }
   }
 
@@ -304,12 +360,16 @@
 
     .history-item,
     .history-item--pending,
-    .history-item--in,
+    .history-item.is-entering,
+    .history-item--exiting,
+    .history-item--flipping,
+    .history-item--lifting,
     #output.is-revealing,
     #output.is-typing pre::after {
       animation: none !important;
       opacity: 1 !important;
       transform: none !important;
+      transition: none !important;
     }
 
     #output {

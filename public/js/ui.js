@@ -1,15 +1,21 @@
 import { escapeHtml, stripCorpusCitations } from "./utils.js";
-import { getStories } from "./storage.js";
 import {
-  createTypewriter,
-  observeStaggerInView,
-  prefersReducedMotion,
-} from "./motion.js";
+  getStories,
+  removeStoryById,
+  toggleFavoriteById,
+} from "./storage.js";
+import { createTypewriter, prefersReducedMotion } from "./motion.js";
+import {
+  measureHistoryRects,
+  playHistoryFlip,
+  animateHistoryExitLeft,
+  playHistoryExpandEntrance,
+} from "./historyMotion.js";
 
-const PREVIEW_LENGTH = 60;
+const PREVIEW_LENGTH = 48;
 
 let activeTypewriter = null;
-let disconnectHistoryObserver = null;
+let historyBusy = false;
 
 function storyPreview(story) {
   const safeStory = stripCorpusCitations(story);
@@ -30,53 +36,140 @@ function stopTypewriter({ snap = false } = {}) {
   activeTypewriter = null;
 }
 
-export function loadHistory(historyEl, clearBtn) {
+/**
+ * @param {import("./storage.js").StoryEntry} entry
+ * @param {number} index
+ */
+function createHistoryItem(entry, index) {
+  const li = document.createElement("li");
+  li.className = "history-item";
+  li.dataset.id = entry.id;
+  li.dataset.index = String(index);
+
+  const text = document.createElement("span");
+  text.className = "history-item__text";
+  text.textContent = storyPreview(entry.text);
+
+  const favoriteBtn = document.createElement("button");
+  favoriteBtn.type = "button";
+  favoriteBtn.className = entry.favorite
+    ? "history-item__favorite is-active"
+    : "history-item__favorite";
+  favoriteBtn.setAttribute(
+    "aria-label",
+    entry.favorite ? "Unfavorite story" : "Favorite story"
+  );
+  favoriteBtn.setAttribute("aria-pressed", String(entry.favorite));
+  favoriteBtn.title = entry.favorite ? "Unfavorite" : "Favorite";
+  favoriteBtn.textContent = entry.favorite ? "★" : "☆";
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.className = "history-item__delete";
+  deleteBtn.setAttribute("aria-label", "Delete story");
+  deleteBtn.title = "Delete story";
+  deleteBtn.textContent = "×";
+
+  li.appendChild(text);
+  li.appendChild(favoriteBtn);
+  li.appendChild(deleteBtn);
+  return li;
+}
+
+/**
+ * Paint history from storage. No fade on mutations — use `entrance` only for expand.
+ * @param {HTMLElement | null} historyEl
+ * @param {{ favoritesOnly?: boolean, entrance?: boolean }} [options]
+ */
+export function loadHistory(historyEl, { favoritesOnly = false, entrance = false } = {}) {
   if (!historyEl) return;
 
-  disconnectHistoryObserver?.();
-  disconnectHistoryObserver = null;
-
   const saved = getStories();
+  const visible = saved
+    .map((entry, index) => ({ entry, index }))
+    .filter(({ entry }) => !favoritesOnly || entry.favorite);
+
   const fragment = document.createDocumentFragment();
-  const reduced = prefersReducedMotion();
-
-  saved.forEach((story, index) => {
-    const li = document.createElement("li");
-    li.className = "history-item";
-    li.dataset.index = String(index);
-    li.style.setProperty("--stagger", String(Math.min(index, 12)));
-
-    if (reduced) {
-      li.classList.add("history-item--in");
-    } else {
-      li.classList.add("history-item--pending");
-    }
-
-    const text = document.createElement("span");
-    text.className = "history-item__text";
-    text.textContent = storyPreview(story);
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.type = "button";
-    deleteBtn.className = "history-item__delete";
-    deleteBtn.setAttribute("aria-label", "Delete story");
-    deleteBtn.title = "Delete story";
-    deleteBtn.textContent = "×";
-
-    li.appendChild(text);
-    li.appendChild(deleteBtn);
-    fragment.appendChild(li);
+  visible.forEach(({ entry, index }) => {
+    fragment.appendChild(createHistoryItem(entry, index));
   });
 
   historyEl.innerHTML = "";
   historyEl.appendChild(fragment);
 
-  if (!reduced) {
-    disconnectHistoryObserver = observeStaggerInView(historyEl);
+  if (entrance) {
+    playHistoryExpandEntrance(historyEl);
+  }
+}
+
+/** Re-run expand fade/slide for currently visible rows. */
+export function expandHistoryEntrance(historyEl) {
+  playHistoryExpandEntrance(historyEl);
+}
+
+/**
+ * @param {HTMLElement | null} historyEl
+ * @param {string} id
+ * @param {{ favoritesOnly?: boolean }} [options]
+ */
+export async function deleteHistoryItemAnimated(historyEl, id, { favoritesOnly = false } = {}) {
+  if (!historyEl || historyBusy) return;
+  const li = historyEl.querySelector(`.history-item[data-id="${CSS.escape(id)}"]`);
+  if (!li) {
+    removeStoryById(id);
+    loadHistory(historyEl, { favoritesOnly });
+    return;
   }
 
-  if (clearBtn) {
-    clearBtn.disabled = saved.length === 0;
+  historyBusy = true;
+  try {
+    const firstRects = measureHistoryRects(historyEl);
+    await animateHistoryExitLeft(/** @type {HTMLElement} */ (li));
+    removeStoryById(id);
+    loadHistory(historyEl, { favoritesOnly });
+    await playHistoryFlip(historyEl, firstRects);
+  } finally {
+    historyBusy = false;
+  }
+}
+
+/**
+ * Favorite elevates to top (FLIP); unfavorite reorders or exits when filter is on.
+ * @param {HTMLElement | null} historyEl
+ * @param {string} id
+ * @param {{ favoritesOnly?: boolean }} [options]
+ */
+export async function toggleFavoriteAnimated(historyEl, id, { favoritesOnly = false } = {}) {
+  if (!historyEl || historyBusy) return;
+  const li = historyEl.querySelector(`.history-item[data-id="${CSS.escape(id)}"]`);
+  if (!li) {
+    toggleFavoriteById(id);
+    loadHistory(historyEl, { favoritesOnly });
+    return;
+  }
+
+  historyBusy = true;
+  try {
+    const wasFavorite = li.querySelector(".history-item__favorite.is-active") != null;
+    const firstRects = measureHistoryRects(historyEl);
+    const entry = toggleFavoriteById(id);
+    if (!entry) return;
+
+    const leavingFilteredView = favoritesOnly && wasFavorite && !entry.favorite;
+
+    if (leavingFilteredView) {
+      await animateHistoryExitLeft(/** @type {HTMLElement} */ (li));
+      loadHistory(historyEl, { favoritesOnly });
+      await playHistoryFlip(historyEl, firstRects);
+      return;
+    }
+
+    loadHistory(historyEl, { favoritesOnly });
+    await playHistoryFlip(historyEl, firstRects, {
+      liftId: entry.favorite ? id : null,
+    });
+  } finally {
+    historyBusy = false;
   }
 }
 
@@ -84,42 +177,58 @@ export function handleHistoryClick(historyEl, onSelectStory) {
   if (!historyEl) return;
 
   historyEl.addEventListener("click", (e) => {
-    if (e.target.closest(".history-item__delete")) return;
+    if (
+      e.target.closest(".history-item__delete") ||
+      e.target.closest(".history-item__favorite")
+    ) {
+      return;
+    }
 
     const li = e.target.closest("li");
     if (!li || li.parentElement !== historyEl) return;
-    const index = li.dataset.index;
-    if (index == null) return;
+    const id = li.dataset.id;
+    if (!id) return;
 
     const saved = getStories();
-    const story = saved[parseInt(index, 10)];
-    if (story != null) onSelectStory(String(story));
+    const entry = saved.find((item) => item.id === id);
+    if (entry?.text) onSelectStory(entry.text);
   });
 }
 
-export function bindHistoryDelete(historyEl, clearBtn, { onDeleteAt, onClearAll }) {
-  if (historyEl) {
-    historyEl.addEventListener("click", (e) => {
-      const deleteBtn = e.target.closest(".history-item__delete");
-      if (!deleteBtn) return;
+export function bindHistoryActions(historyEl, { onDeleteAt, onToggleFavorite }) {
+  if (!historyEl) return;
 
+  historyEl.addEventListener("click", (e) => {
+    const favoriteBtn = e.target.closest(".history-item__favorite");
+    if (favoriteBtn) {
       e.preventDefault();
       e.stopPropagation();
-
-      const li = deleteBtn.closest("li");
+      const li = favoriteBtn.closest("li");
       if (!li || li.parentElement !== historyEl) return;
-      const index = li.dataset.index;
-      if (index == null) return;
+      const id = li.dataset.id;
+      if (!id) return;
+      onToggleFavorite(id);
+      return;
+    }
 
-      onDeleteAt(parseInt(index, 10));
-    });
-  }
+    const deleteBtn = e.target.closest(".history-item__delete");
+    if (!deleteBtn) return;
 
-  clearBtn?.addEventListener("click", (e) => {
     e.preventDefault();
-    if (clearBtn.disabled) return;
-    onClearAll();
+    e.stopPropagation();
+
+    const li = deleteBtn.closest("li");
+    if (!li || li.parentElement !== historyEl) return;
+    const id = li.dataset.id;
+    if (!id) return;
+
+    onDeleteAt(id);
   });
+}
+
+/** @deprecated Use bindHistoryActions */
+export function bindHistoryDelete(historyEl, _clearBtn, handlers) {
+  bindHistoryActions(historyEl, handlers);
 }
 
 function triggerOutputReveal(outputEl) {
@@ -241,6 +350,107 @@ export function showFallbackModal(message) {
   overlay.querySelector(".fallback-dismiss").addEventListener("click", dismiss);
   document.body.style.overflow = "hidden";
   document.body.appendChild(overlay);
+}
+
+/**
+ * @param {{
+ *   message?: string,
+ * }} [options]
+ * @returns {Promise<"all" | "unfavorited" | false>}
+ */
+export function showDeleteHistoryModal({
+  message = "How do you want to clear story history?",
+} = {}) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "fallback-overlay";
+    overlay.innerHTML = `
+      <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+        <p id="confirm-modal-title">${escapeHtml(message)}</p>
+        <div class="confirm-modal__actions">
+          <button class="confirm-ok" type="button" data-action="all">Delete all</button>
+          <button class="confirm-ok confirm-ok--soft" type="button" data-action="unfavorited">Delete only unfavourite stories</button>
+          <button class="confirm-cancel" type="button" data-action="cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+
+    function close(result) {
+      overlay.remove();
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKeyDown);
+      resolve(result);
+    }
+
+    function onKeyDown(e) {
+      if (e.key === "Escape") close(false);
+    }
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(false);
+    });
+    overlay.querySelectorAll("[data-action]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = button.getAttribute("data-action");
+        if (action === "all") close("all");
+        else if (action === "unfavorited") close("unfavorited");
+        else close(false);
+      });
+    });
+    document.addEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "hidden";
+    document.body.appendChild(overlay);
+    overlay.querySelector('[data-action="cancel"]')?.focus();
+  });
+}
+
+/**
+ * @param {{
+ *   message: string,
+ *   confirmLabel?: string,
+ *   cancelLabel?: string,
+ * }} options
+ * @returns {Promise<boolean>}
+ */
+export function showConfirmModal({
+  message,
+  confirmLabel = "Delete all",
+  cancelLabel = "Cancel",
+}) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "fallback-overlay";
+    overlay.innerHTML = `
+      <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+        <p id="confirm-modal-title">${escapeHtml(message)}</p>
+        <div class="confirm-modal__actions">
+          <button class="confirm-cancel" type="button">${escapeHtml(cancelLabel)}</button>
+          <button class="confirm-ok" type="button">${escapeHtml(confirmLabel)}</button>
+        </div>
+      </div>
+    `;
+
+    function close(result) {
+      overlay.remove();
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKeyDown);
+      resolve(result);
+    }
+
+    function onKeyDown(e) {
+      if (e.key === "Escape") close(false);
+    }
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(false);
+    });
+    overlay.querySelector(".confirm-cancel").addEventListener("click", () => close(false));
+    overlay.querySelector(".confirm-ok").addEventListener("click", () => close(true));
+    document.addEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "hidden";
+    document.body.appendChild(overlay);
+    overlay.querySelector(".confirm-cancel")?.focus();
+  });
 }
 
 export function setLoading(isLoading, { btn, regenBtn, continueBtn }) {

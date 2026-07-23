@@ -1,14 +1,17 @@
 import { whenReady, stripCorpusCitations } from "./utils.js";
 import { RANDOM_SEEDS } from "./constants.js";
-import { getStories, saveStory, removeStoryAt, clearStories } from "./storage.js";
+import { saveStory, clearStories, clearNonFavorites, getStories } from "./storage.js";
 import { streamStory } from "./api.js";
 import { normalizeApiError } from "./http.js";
 import { generateLocalStory } from "./localGenerator.js";
 import { initDarkMode, toggleDarkMode } from "./theme.js";
 import {
   loadHistory,
+  expandHistoryEntrance,
+  deleteHistoryItemAnimated,
+  toggleFavoriteAnimated,
   handleHistoryClick,
-  bindHistoryDelete,
+  bindHistoryActions,
   renderStory,
   appendStoryChunk,
   completeStoryStream,
@@ -16,6 +19,7 @@ import {
   renderGenerating,
   updateStats,
   showFallbackModal,
+  showDeleteHistoryModal,
   setLoading,
 } from "./ui.js";
 
@@ -37,12 +41,17 @@ const ELEMENTS = {
   historyEl: document.getElementById("history"),
   historyBox: document.getElementById("historyBox"),
   historyToggleBtn: document.getElementById("toggleHistory"),
-  clearHistoryBtn: document.getElementById("clearHistory"),
+  historyMenu: document.getElementById("historyMenu"),
+  historyMenuToggle: document.getElementById("historyMenuToggle"),
+  historyMenuList: document.getElementById("historyMenuList"),
+  historyFilterFavorites: document.getElementById("historyFilterFavorites"),
+  historyDeleteMenu: document.getElementById("historyDeleteMenu"),
   themeToggle: document.getElementById("themeToggle"),
 };
 
 let messages = [];
 let fallbackPopupShown = false;
+let favoritesOnly = false;
 
 const FALLBACK_MESSAGE = {
   CREDITS: "Out of credits - generating fallback story",
@@ -51,6 +60,28 @@ const FALLBACK_MESSAGE = {
   SERVER: "AI service error - using local generator",
   HTTP: "AI unavailable - using local generator",
 };
+
+function refreshHistory({ entrance = false } = {}) {
+  loadHistory(ELEMENTS.historyEl, { favoritesOnly, entrance });
+  syncHistoryMenu();
+}
+
+function setHistoryMenuOpen(isOpen) {
+  ELEMENTS.historyMenu?.classList.toggle("is-open", isOpen);
+  ELEMENTS.historyMenuToggle?.setAttribute("aria-expanded", String(isOpen));
+}
+
+function syncHistoryMenu() {
+  const hasStories = getStories().length > 0;
+  if (ELEMENTS.historyDeleteMenu) {
+    ELEMENTS.historyDeleteMenu.disabled = !hasStories;
+  }
+  if (ELEMENTS.historyFilterFavorites) {
+    ELEMENTS.historyFilterFavorites.textContent = favoritesOnly
+      ? "Show all stories"
+      : "Show only favorites";
+  }
+}
 
 function generateRandomSeed() {
   const randomIndex = Math.floor(Math.random() * RANDOM_SEEDS.length);
@@ -141,7 +172,7 @@ async function runStoryRequest({ isContinuation }) {
       renderStory(fullStory, { ...streamUi, animate: false });
     }
     saveStory(fullStory);
-    loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
+    refreshHistory();
     setContinueEnabled(hasActiveConversation());
   }
 
@@ -177,7 +208,7 @@ async function runStoryRequest({ isContinuation }) {
       renderStory(fullStory, { ...streamUi, animate: false });
     }
     saveStory(fullStory);
-    loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
+    refreshHistory();
     setContinueEnabled(hasActiveConversation());
   } catch {
     clearTimeout(timeoutId);
@@ -260,7 +291,7 @@ function selectLengthOption(optionButton) {
 function init() {
   initDarkMode(ELEMENTS.themeToggle);
   generateRandomSeed();
-  loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
+  refreshHistory();
   setContinueEnabled(false);
 }
 
@@ -282,34 +313,71 @@ function bindEvents() {
     if (!ELEMENTS.lengthDropdown?.contains(e.target)) {
       setLengthDropdownOpen(false);
     }
+    if (!ELEMENTS.historyMenu?.contains(e.target)) {
+      setHistoryMenuOpen(false);
+    }
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") setLengthDropdownOpen(false);
+    if (e.key === "Escape") {
+      setLengthDropdownOpen(false);
+      setHistoryMenuOpen(false);
+    }
   });
 
   ELEMENTS.historyToggleBtn?.addEventListener("click", (e) => {
     e.preventDefault();
     ELEMENTS.historyBox?.classList.toggle("expanded");
     const isExpanded = ELEMENTS.historyBox?.classList.contains("expanded");
+    const label = isExpanded ? "Collapse history" : "Expand history";
     ELEMENTS.historyToggleBtn?.setAttribute("aria-expanded", String(isExpanded));
-    ELEMENTS.historyToggleBtn?.setAttribute(
-      "aria-label",
-      isExpanded ? "Collapse history" : "Expand history"
-    );
-    const label = ELEMENTS.historyToggleBtn?.querySelector(".history-toggle__label");
-    if (label) label.textContent = isExpanded ? "Collapse" : "Expand";
+    ELEMENTS.historyToggleBtn?.setAttribute("aria-label", label);
+    ELEMENTS.historyToggleBtn?.setAttribute("title", label);
+    if (isExpanded) {
+      expandHistoryEntrance(ELEMENTS.historyEl);
+    }
+  });
+
+  ELEMENTS.historyMenuToggle?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const isOpen = ELEMENTS.historyMenu?.classList.contains("is-open");
+    setHistoryMenuOpen(!isOpen);
+  });
+
+  ELEMENTS.historyFilterFavorites?.addEventListener("click", (e) => {
+    e.preventDefault();
+    favoritesOnly = !favoritesOnly;
+    setHistoryMenuOpen(false);
+    refreshHistory();
+  });
+
+  ELEMENTS.historyDeleteMenu?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    setHistoryMenuOpen(false);
+    if (ELEMENTS.historyDeleteMenu?.disabled) return;
+
+    const action = await showDeleteHistoryModal();
+    if (action === "all") {
+      clearStories();
+      favoritesOnly = false;
+    } else if (action === "unfavorited") {
+      clearNonFavorites();
+    } else {
+      return;
+    }
+    refreshHistory();
   });
 
   handleHistoryClick(ELEMENTS.historyEl, onSelectStory);
 
-  bindHistoryDelete(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn, {
-    onDeleteAt: (index) => {
-      removeStoryAt(index);
-      loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
+  bindHistoryActions(ELEMENTS.historyEl, {
+    onDeleteAt: async (id) => {
+      await deleteHistoryItemAnimated(ELEMENTS.historyEl, id, { favoritesOnly });
+      syncHistoryMenu();
     },
-    onClearAll: () => {
-      clearStories();
-      loadHistory(ELEMENTS.historyEl, ELEMENTS.clearHistoryBtn);
+    onToggleFavorite: async (id) => {
+      await toggleFavoriteAnimated(ELEMENTS.historyEl, id, { favoritesOnly });
+      syncHistoryMenu();
     },
   });
 

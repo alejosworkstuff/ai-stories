@@ -60,9 +60,85 @@ test("delete one history item and clear all", async ({ page }) => {
   await expect(page.locator("#history li")).toHaveCount(1);
   await expect(page.locator("#history li").first()).toContainText("detective");
 
-  await page.getByRole("button", { name: "Clear all" }).click();
+  await page.getByRole("button", { name: "History options" }).click();
+  await page.getByRole("menuitem", { name: "Delete…" }).click();
+  await expect(page.getByRole("dialog")).toContainText("clear story history");
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.locator("#history li")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "History options" }).click();
+  await page.getByRole("menuitem", { name: "Delete…" }).click();
+  await page.getByRole("button", { name: "Delete all" }).click();
   await expect(page.locator("#history li")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Clear all" })).toBeDisabled();
+});
+
+test("favorite pins a story and filter shows only favorites", async ({ page }) => {
+  let requestCount = 0;
+  await page.unroute("**/api/generate-stories");
+  await page.route("**/api/generate-stories", async (route) => {
+    requestCount += 1;
+    const output = requestCount === 1 ? MOCK_STORY : MOCK_DETECTIVE_STORY;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ output }),
+    });
+  });
+
+  await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.locator("#history li")).toHaveCount(1);
+
+  await page.locator("#seed").fill("A detective who can hear lies");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.locator("#history li")).toHaveCount(2);
+  await expect(page.locator("#history li").first()).toContainText("detective");
+
+  await page.getByRole("button", { name: "Favorite story" }).nth(1).click();
+  await expect(page.locator("#history li").first()).toContainText("violinist");
+  await expect(
+    page.locator("#history li").first().getByRole("button", { name: "Unfavorite story" })
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "History options" }).click();
+  await page.getByRole("menuitem", { name: "Show only favorites" }).click();
+  await expect(page.locator("#history li")).toHaveCount(1);
+  await expect(page.locator("#history li").first()).toContainText("violinist");
+
+  await page.getByRole("button", { name: "History options" }).click();
+  await page.getByRole("menuitem", { name: "Show all stories" }).click();
+  await expect(page.locator("#history li")).toHaveCount(2);
+});
+
+test("delete only unfavourite stories keeps favorites", async ({ page }) => {
+  let requestCount = 0;
+  await page.unroute("**/api/generate-stories");
+  await page.route("**/api/generate-stories", async (route) => {
+    requestCount += 1;
+    const output = requestCount === 1 ? MOCK_STORY : MOCK_DETECTIVE_STORY;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ output }),
+    });
+  });
+
+  await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.locator("#history li")).toHaveCount(1);
+
+  await page.locator("#seed").fill("A detective who can hear lies");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.locator("#history li")).toHaveCount(2);
+
+  await page.getByRole("button", { name: "Favorite story" }).nth(1).click();
+  await expect(page.locator("#history li").first()).toContainText("violinist");
+
+  await page.getByRole("button", { name: "History options" }).click();
+  await page.getByRole("menuitem", { name: "Delete…" }).click();
+  await page.getByRole("button", { name: "Delete only unfavourite stories" }).click();
+  await expect(page.locator("#history li")).toHaveCount(1);
+  await expect(page.locator("#history li").first()).toContainText("violinist");
 });
 
 test("continue a story appends the next part", async ({ page }) => {
