@@ -48,10 +48,12 @@ async function main() {
     const caseScore = score(results);
     caseScores[testCase.id] = caseScore;
     totalScore += caseScore;
-    const failed = results.filter((r) => !r.passed).map((r) => r.name);
+    const failed = results.filter((r) => !r.passed);
+    const failedNames = failed.map((r) => r.name);
+    const detail = failed[0]?.detail ? ` — ${failed[0].detail}` : "";
     const verdict = caseScore >= THRESHOLD ? "PASS" : "FAIL";
     console.log(
-      `${verdict}  ${testCase.id.padEnd(24)} ${(caseScore * 100).toFixed(0).padStart(3)}%  ${failed.join(", ")}`
+      `${verdict}  ${testCase.id.padEnd(24)} ${(caseScore * 100).toFixed(0).padStart(3)}%  ${failedNames.join(", ")}${detail}`
     );
   }
 

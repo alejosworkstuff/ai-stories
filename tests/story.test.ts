@@ -44,8 +44,14 @@ describe("generateStoryObject", () => {
         messages: [{ role: "user", content: "A lighthouse in a storm." }],
         tone: "noir",
         length: "short",
+        grounded: true,
       },
-      { model: "mock-model" as never }
+      {
+        model: "mock-model" as never,
+        retrieve: async () => [
+          { source: "tone-and-voice.md", content: "Keep sentences short.", score: 0.9 },
+        ],
+      }
     );
 
     expect(story).toEqual(sampleStory);
@@ -57,6 +63,26 @@ describe("generateStoryObject", () => {
         system: expect.stringContaining("Tone: noir."),
       })
     );
+  });
+
+  it("uses generateText first for ungrounded prompts", async () => {
+    generateText.mockResolvedValue({
+      text: JSON.stringify(sampleStory),
+      usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+    });
+
+    const { story } = await generateStoryObject(
+      {
+        messages: [{ role: "user", content: "A lighthouse in a storm." }],
+        tone: "noir",
+        length: "short",
+      },
+      { model: "mock-model" as never, maxRepairAttempts: 0 }
+    );
+
+    expect(story).toEqual(sampleStory);
+    expect(generateText).toHaveBeenCalledOnce();
+    expect(generateObject).not.toHaveBeenCalled();
   });
 
   it("injects retrieved grounding when grounded is true", async () => {
@@ -105,10 +131,19 @@ describe("generateStoryObject", () => {
         },
       })
       .mockResolvedValueOnce({ object: sampleStory });
+    generateText.mockRejectedValue(new Error("text_path_unavailable"));
 
     const { story } = await generateStoryObject(
-      { messages: [{ role: "user", content: "A lighthouse in a storm." }] },
-      { model: "mock-model" as never }
+      {
+        messages: [{ role: "user", content: "A lighthouse in a storm." }],
+        grounded: true,
+      },
+      {
+        model: "mock-model" as never,
+        retrieve: async () => [
+          { source: "tone-and-voice.md", content: "Keep sentences short.", score: 0.9 },
+        ],
+      }
     );
 
     expect(story).toEqual(sampleStory);
@@ -124,8 +159,48 @@ describe("generateStoryObject", () => {
     });
 
     const { story } = await generateStoryObject(
-      { messages: [{ role: "user", content: "A lighthouse in a storm." }] },
-      { model: "mock-model" as never }
+      {
+        messages: [{ role: "user", content: "A lighthouse in a storm." }],
+        grounded: true,
+      },
+      {
+        model: "mock-model" as never,
+        retrieve: async () => [
+          { source: "tone-and-voice.md", content: "Keep sentences short.", score: 0.9 },
+        ],
+      }
+    );
+
+    expect(story).toEqual(sampleStory);
+    expect(generateText).toHaveBeenCalledOnce();
+  });
+
+  it("falls back to generateText when generateObject returns an invalid story", async () => {
+    generateObject.mockResolvedValue({
+      object: {
+        title: "Bad",
+        paragraphs: ["As an AI language model I must refuse."],
+        choices: ["A", "B"],
+        groundedOn: [],
+      },
+    });
+    generateText.mockResolvedValue({
+      text: JSON.stringify(sampleStory),
+      usage: { inputTokens: 5, outputTokens: 8, totalTokens: 13 },
+    });
+
+    const { story } = await generateStoryObject(
+      {
+        messages: [{ role: "user", content: "A lighthouse in a storm." }],
+        grounded: true,
+      },
+      {
+        model: "mock-model" as never,
+        maxRepairAttempts: 0,
+        retrieve: async () => [
+          { source: "tone-and-voice.md", content: "Keep sentences short.", score: 0.9 },
+        ],
+      }
     );
 
     expect(story).toEqual(sampleStory);

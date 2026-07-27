@@ -25,8 +25,10 @@ const REPAIR_SUFFIX =
   "\nRepair: your previous answer failed validation. Return schema-valid story JSON only — no meta commentary, tool names, or instruction leakage.";
 
 /** Groq requires the word "json" in messages when using response_format json_object. */
-const JSON_OUTPUT_SUFFIX =
-  " Respond with a single JSON object (title, paragraphs, choices, groundedOn).";
+const JSON_OUTPUT_SUFFIX = [
+  " Respond with a single JSON object only (no markdown fences).",
+  ' Exact keys: "title" (string), "paragraphs" (string[]), "choices" (string[], at least 2), "groundedOn" (string[] of corpus filenames or empty).',
+].join("");
 
 function extractJsonObject(text: string): unknown {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -39,12 +41,32 @@ function extractJsonObject(text: string): unknown {
   return JSON.parse(candidate.slice(start, end + 1));
 }
 
+async function generateViaTextJson(args: {
+  model: ReturnType<typeof languageModel>;
+  system: string;
+  messages: ModelMessage[];
+}): Promise<{
+  object: unknown;
+  usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+}> {
+  const textResult = await generateText({
+    model: args.model,
+    system: args.system,
+    messages: args.messages,
+  });
+  return {
+    object: extractJsonObject(textResult.text),
+    usage: textResult.usage,
+  };
+}
+
 /**
  * Structured (Zod-typed) story generation. Used by the eval harness and any
  * caller that wants validated JSON instead of streamed prose.
  *
- * Tries `generateObject` first; on providers that lack structured outputs
- * (e.g. Groq via OpenAI-compatible), falls back to `generateText` + JSON parse.
+ * Tries `generateObject` first; when the provider lacks structured outputs
+ * (Groq via OpenAI-compatible often returns unusable objects without throwing),
+ * falls back to `generateText` + JSON parse on the same attempt.
  */
 export async function generateStoryObject(
   params: StoryObjectParams,
@@ -68,58 +90,76 @@ export async function generateStoryObject(
   let repairNote = "";
   let lastDetail = "invalid_story";
   const systemBase = buildSystemPrompt(params.tone, params.length);
+  const messages = params.messages as ModelMessage[];
 
   for (let attempt = 0; attempt <= maxRepairAttempts; attempt++) {
     const system = systemBase + grounding + repairNote + JSON_OUTPUT_SUFFIX;
-    let object: unknown;
+    let object: unknown | undefined;
     let usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } | undefined;
+    // Groq's OpenAI-compatible path often returns unusable objects without throwing
+    // when there is no grounding context; prefer text→JSON there.
+    const tryObjectFirst = Boolean(params.grounded) || attempt > 0;
 
-    try {
-      const result = await generateObject({
-        model,
-        schema: storySchema,
-        schemaName: "Story",
-        schemaDescription: "Collaborative fiction continuation with title, paragraphs, choices, groundedOn",
-        system,
-        messages: params.messages as ModelMessage[],
-      });
-      object = result.object;
-      usage = result.usage;
-    } catch (objectError) {
+    if (tryObjectFirst) {
       try {
-        const textResult = await generateText({
+        const result = await generateObject({
           model,
+          schema: storySchema,
+          schemaName: "Story",
+          schemaDescription: "Collaborative fiction continuation with title, paragraphs, choices, groundedOn",
           system,
-          messages: params.messages as ModelMessage[],
+          messages,
         });
-        object = extractJsonObject(textResult.text);
-        usage = textResult.usage;
-      } catch (textError) {
-        lastDetail = String(
-          (textError as Error)?.message ?? (objectError as Error)?.message ?? objectError
-        );
-        repairNote = REPAIR_SUFFIX;
-        continue;
+        object = result.object;
+        usage = result.usage;
+      } catch (objectError) {
+        lastDetail = String((objectError as Error)?.message ?? objectError);
+      }
+
+      const objectValidation = object !== undefined ? validateStoryOutput(object) : null;
+      if (objectValidation?.ok) {
+        logGeneration({
+          model: CHAT_MODEL_ID,
+          latencyMs: Date.now() - startedAt,
+          inputTokens: usage?.inputTokens,
+          outputTokens: usage?.outputTokens,
+          totalTokens: usage?.totalTokens,
+          estimatedCostUsd: estimateCostUsd(CHAT_MODEL_ID, usage),
+          promptPreview: buildPromptPreview({ system, messages: params.messages }),
+          retrievedPassages: retrieved.length,
+          source: "structured",
+        });
+        return { story: objectValidation.story, retrieved };
+      }
+      if (objectValidation && !objectValidation.ok) {
+        lastDetail = objectValidation.detail;
       }
     }
 
-    const validation = validateStoryOutput(object);
-    if (validation.ok) {
-      logGeneration({
-        model: CHAT_MODEL_ID,
-        latencyMs: Date.now() - startedAt,
-        inputTokens: usage?.inputTokens,
-        outputTokens: usage?.outputTokens,
-        totalTokens: usage?.totalTokens,
-        estimatedCostUsd: estimateCostUsd(CHAT_MODEL_ID, usage),
-        promptPreview: buildPromptPreview({ system, messages: params.messages }),
-        retrievedPassages: retrieved.length,
-        source: "structured",
-      });
-      return { story: validation.story, retrieved };
+    try {
+      const textPath = await generateViaTextJson({ model, system, messages });
+      object = textPath.object;
+      usage = textPath.usage;
+      const validation = validateStoryOutput(object);
+      if (validation.ok) {
+        logGeneration({
+          model: CHAT_MODEL_ID,
+          latencyMs: Date.now() - startedAt,
+          inputTokens: usage?.inputTokens,
+          outputTokens: usage?.outputTokens,
+          totalTokens: usage?.totalTokens,
+          estimatedCostUsd: estimateCostUsd(CHAT_MODEL_ID, usage),
+          promptPreview: buildPromptPreview({ system, messages: params.messages }),
+          retrievedPassages: retrieved.length,
+          source: "structured",
+        });
+        return { story: validation.story, retrieved };
+      }
+      lastDetail = validation.detail;
+    } catch (textError) {
+      lastDetail = String((textError as Error)?.message ?? textError);
     }
 
-    lastDetail = validation.detail;
     repairNote = REPAIR_SUFFIX;
   }
 
