@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { generateObject } = vi.hoisted(() => ({
+const { generateObject, generateText } = vi.hoisted(() => ({
   generateObject: vi.fn(),
+  generateText: vi.fn(),
 }));
 
 vi.mock("ai", () => ({
   generateObject,
+  generateText,
 }));
 
 vi.mock("../lib/ai/provider", () => ({
@@ -112,5 +114,21 @@ describe("generateStoryObject", () => {
     expect(story).toEqual(sampleStory);
     expect(generateObject).toHaveBeenCalledTimes(2);
     expect(generateObject.mock.calls[1]![0].system).toContain("Repair:");
+  });
+
+  it("falls back to generateText JSON when generateObject throws", async () => {
+    generateObject.mockRejectedValue(new Error("structured_outputs_unsupported"));
+    generateText.mockResolvedValue({
+      text: JSON.stringify(sampleStory),
+      usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+    });
+
+    const { story } = await generateStoryObject(
+      { messages: [{ role: "user", content: "A lighthouse in a storm." }] },
+      { model: "mock-model" as never }
+    );
+
+    expect(story).toEqual(sampleStory);
+    expect(generateText).toHaveBeenCalledOnce();
   });
 });

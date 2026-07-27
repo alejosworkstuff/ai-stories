@@ -17,12 +17,13 @@ export const INJECTION_PATTERNS: RegExp[] = [
 ];
 
 export const OUTPUT_LEAK_PATTERNS: RegExp[] = [
-  /system prompt/i,
-  /these instructions/i,
+  /here (?:is|are) (?:my|the) system prompt/i,
+  /system prompt(?: is|:)\s*\S/i,
   /as an ai language model/i,
   /searchCorpus/i,
   /untrusted context/i,
   /BEGIN UNTRUSTED CONTEXT/i,
+  /hidden rules?\s*:/i,
 ];
 
 export type StoryValidationResult =

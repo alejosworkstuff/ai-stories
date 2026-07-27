@@ -44,6 +44,12 @@ describe("screenOutput", () => {
     expect(screenOutput("I will call searchCorpus now").flagged).toBe(true);
   });
 
+  it("does not flag soft refusals that only mention prompts", () => {
+    expect(
+      screenOutput("Ignoring the request to reveal the system prompt, the spy kept walking.").flagged
+    ).toBe(false);
+  });
+
   it("passes ordinary story prose", () => {
     expect(screenOutput("The knight entered the tower at dusk.").flagged).toBe(false);
   });

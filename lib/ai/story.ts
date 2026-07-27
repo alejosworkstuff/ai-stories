@@ -1,4 +1,4 @@
-import { generateObject, type ModelMessage } from "ai";
+import { generateObject, generateText, type ModelMessage } from "ai";
 import { languageModel, CHAT_MODEL_ID } from "./provider.js";
 import { buildSystemPrompt } from "./prompt.js";
 import type { Story } from "./schema.js";
@@ -28,9 +28,23 @@ const REPAIR_SUFFIX =
 const JSON_OUTPUT_SUFFIX =
   " Respond with a single JSON object (title, paragraphs, choices, groundedOn).";
 
+function extractJsonObject(text: string): unknown {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = (fenced?.[1] ?? text).trim();
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start < 0 || end <= start) {
+    throw new Error("no_json_object");
+  }
+  return JSON.parse(candidate.slice(start, end + 1));
+}
+
 /**
  * Structured (Zod-typed) story generation. Used by the eval harness and any
  * caller that wants validated JSON instead of streamed prose.
+ *
+ * Tries `generateObject` first; on providers that lack structured outputs
+ * (e.g. Groq via OpenAI-compatible), falls back to `generateText` + JSON parse.
  */
 export async function generateStoryObject(
   params: StoryObjectParams,
@@ -38,7 +52,7 @@ export async function generateStoryObject(
 ): Promise<{ story: Story; retrieved: RetrievedChunk[] }> {
   const retrieve = deps.retrieve ?? defaultRetrieve;
   const model = deps.model ?? languageModel();
-  const maxRepairAttempts = deps.maxRepairAttempts ?? 2;
+  const maxRepairAttempts = deps.maxRepairAttempts ?? 3;
   const startedAt = Date.now();
 
   const lastUser = [...params.messages].reverse().find((m) => m.role === "user");
@@ -71,10 +85,22 @@ export async function generateStoryObject(
       });
       object = result.object;
       usage = result.usage;
-    } catch (error) {
-      lastDetail = String((error as Error)?.message ?? error);
-      repairNote = REPAIR_SUFFIX;
-      continue;
+    } catch (objectError) {
+      try {
+        const textResult = await generateText({
+          model,
+          system,
+          messages: params.messages as ModelMessage[],
+        });
+        object = extractJsonObject(textResult.text);
+        usage = textResult.usage;
+      } catch (textError) {
+        lastDetail = String(
+          (textError as Error)?.message ?? (objectError as Error)?.message ?? objectError
+        );
+        repairNote = REPAIR_SUFFIX;
+        continue;
+      }
     }
 
     const validation = validateStoryOutput(object);
