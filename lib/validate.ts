@@ -54,11 +54,12 @@ export function validateGenerateRequest(body: unknown): ValidationError | null {
     return { error: "invalid_length" };
   }
 
+  // Blank tone is optional — the UI sends "" when the genre field is empty.
   if (tone !== undefined) {
-    if (typeof tone !== "string" || !tone.trim()) {
+    if (typeof tone !== "string") {
       return { error: "invalid_tone" };
     }
-    if (tone.length > MAX_TONE_LENGTH) {
+    if (tone.trim() && tone.length > MAX_TONE_LENGTH) {
       return { error: "tone_too_long" };
     }
   }

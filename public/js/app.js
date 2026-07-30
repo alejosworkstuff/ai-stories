@@ -179,7 +179,7 @@ async function runStoryRequest({ isContinuation }) {
   try {
     let streamed = "";
     const { res, data, text } = await streamStory(
-      { messages, tone, length },
+      { messages, ...(tone ? { tone } : {}), length },
       {
         signal: controller.signal,
         onToken: (chunk) => {

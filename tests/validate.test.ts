@@ -55,11 +55,26 @@ describe("validateGenerateRequest", () => {
     ).toEqual({ error: "message_too_long" });
   });
 
-  it("rejects empty tone strings", () => {
+  it("treats blank tone as omitted (optional field)", () => {
+    expect(
+      validateGenerateRequest({
+        messages: [{ role: "user", content: "seed" }],
+        tone: "",
+      })
+    ).toBeNull();
     expect(
       validateGenerateRequest({
         messages: [{ role: "user", content: "seed" }],
         tone: "   ",
+      })
+    ).toBeNull();
+  });
+
+  it("rejects non-string tone", () => {
+    expect(
+      validateGenerateRequest({
+        messages: [{ role: "user", content: "seed" }],
+        tone: 42 as unknown as string,
       })
     ).toEqual({ error: "invalid_tone" });
   });
