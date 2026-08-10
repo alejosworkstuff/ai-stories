@@ -8,7 +8,6 @@ export interface EvalCase {
   length?: "short" | "medium" | "long";
   grounded?: boolean;
   minParagraphs: number;
-  /** When grounded, at least one of these corpus sources should appear in groundedOn. */
   expectSources?: string[];
 }
 

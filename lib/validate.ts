@@ -15,11 +15,6 @@ export interface ValidationError {
   error: string;
 }
 
-/**
- * Request validation with stable, client-facing error codes. (The Zod schema in
- * ai/schema.ts is used for typed parsing downstream; here we keep granular codes
- * the frontend's fallback messages and tests rely on.)
- */
 export function validateGenerateRequest(body: unknown): ValidationError | null {
   const { messages, tone, length } = (body ?? {}) as {
     messages?: unknown;
@@ -54,7 +49,6 @@ export function validateGenerateRequest(body: unknown): ValidationError | null {
     return { error: "invalid_length" };
   }
 
-  // Blank tone is optional — the UI sends "" when the genre field is empty.
   if (tone !== undefined) {
     if (typeof tone !== "string") {
       return { error: "invalid_tone" };

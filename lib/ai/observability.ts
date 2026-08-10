@@ -51,8 +51,6 @@ export function estimateCostUsd(model: string, usage?: TokenUsage): number {
   return Math.round(cost * 1_000_000) / 1_000_000;
 }
 
-/** Structured, always-on telemetry (one JSON line per generation) + optional
- * best-effort forwarding to Langfuse when LANGFUSE_* is configured. */
 export function logGeneration(telemetry: GenerationTelemetry): void {
   console.log(JSON.stringify({ evt: "generation", ...telemetry }));
   void forwardToLangfuse(telemetry);

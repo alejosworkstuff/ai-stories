@@ -6,7 +6,6 @@ export function whenReady(fn) {
   }
 }
 
-/** Remove leaked RAG source tags like `[narrative-structure.md]` from story prose. */
 export function stripCorpusCitations(text) {
   return String(text ?? "")
     .replace(/\s*\[[^\]]+\.md\]/gi, "")

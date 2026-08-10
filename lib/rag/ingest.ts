@@ -11,7 +11,6 @@ export interface IngestResult {
   chunks: number;
 }
 
-/** Read a corpus directory, chunk + embed each file, and upsert into pgvector. */
 export async function ingestCorpus(dir: string): Promise<IngestResult> {
   await ensureSchema();
 

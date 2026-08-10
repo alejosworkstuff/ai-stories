@@ -4,16 +4,10 @@ export interface Chunk {
 }
 
 export interface ChunkOptions {
-  /** Soft max characters per chunk. */
   size?: number;
-  /** Characters of trailing overlap carried into the next chunk. */
   overlap?: number;
 }
 
-/**
- * Paragraph-aware chunking: packs paragraphs up to `size`, carrying `overlap`
- * characters of context across boundaries so retrieval keeps continuity.
- */
 export function chunkText(text: string, options: ChunkOptions = {}): Chunk[] {
   const size = options.size ?? 800;
   const overlap = options.overlap ?? 120;

@@ -1,4 +1,3 @@
-/** Dimension for the offline bag-of-words embedder (no API key required). */
 export const LOCAL_EMBEDDING_DIM = 384;
 
 let warned = false;
@@ -12,7 +11,6 @@ function warnOnce(): void {
   );
 }
 
-/** Deterministic, normalized bag-of-words vectors for offline ingest + retrieval. */
 export function localBagEmbed(text: string, dim: number = LOCAL_EMBEDDING_DIM): number[] {
   const vec = new Array<number>(dim).fill(0);
   const tokens = text.toLowerCase().match(/[a-z0-9']+/g) ?? [];

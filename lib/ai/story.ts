@@ -60,14 +60,6 @@ async function generateViaTextJson(args: {
   };
 }
 
-/**
- * Structured (Zod-typed) story generation. Used by the eval harness and any
- * caller that wants validated JSON instead of streamed prose.
- *
- * Tries `generateObject` first; when the provider lacks structured outputs
- * (Groq via OpenAI-compatible often returns unusable objects without throwing),
- * falls back to `generateText` + JSON parse on the same attempt.
- */
 export async function generateStoryObject(
   params: StoryObjectParams,
   deps: StoryObjectDeps = {}
@@ -96,8 +88,6 @@ export async function generateStoryObject(
     const system = systemBase + grounding + repairNote + JSON_OUTPUT_SUFFIX;
     let object: unknown | undefined;
     let usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } | undefined;
-    // Groq's OpenAI-compatible path often returns unusable objects without throwing
-    // when there is no grounding context; prefer text→JSON there.
     const tryObjectFirst = Boolean(params.grounded) || attempt > 0;
 
     if (tryObjectFirst) {

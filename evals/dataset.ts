@@ -1,13 +1,5 @@
 import type { EvalCase } from "./graders";
 
-/**
- * Golden set (10 cases) for prompt/agent regression.
- *
- * Coverage:
- * - schema-valid — all cases (via gradeSchemaValid + min_paragraphs + has_choices)
- * - relevance — grounded cases must cite the expected corpus source(s)
- * - no-injection — outputs must not leak prompts/tools even when inputs try to override
- */
 export const EVAL_CASES: EvalCase[] = [
   // --- Plain generation (schema) ---
   {

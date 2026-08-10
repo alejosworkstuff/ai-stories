@@ -25,10 +25,6 @@ export const generateRequestSchema = z.object({
 });
 export type GenerateRequest = z.infer<typeof generateRequestSchema>;
 
-/**
- * Structured story output used by `generateObject` and the eval harness.
- * Demonstrates typed LLM outputs (Zod-validated, not free text).
- */
 export const storySchema = z.object({
   title: z.string().min(1).max(120),
   paragraphs: z.array(z.string().min(1)).min(1),

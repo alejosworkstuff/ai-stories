@@ -21,7 +21,6 @@ export interface GenerationResult {
   errorCode?: string;
 }
 
-/** Minimal Node response surface used for streaming (keeps the handler testable). */
 export interface ResponseSink {
   statusCode?: number;
   setHeader(name: string, value: string): unknown;
@@ -35,15 +34,6 @@ export interface StoryStreamerDeps {
   maxSteps?: number;
 }
 
-/**
- * Agentic, RAG-grounded, streaming story generation:
- * - `streamText` runs a tool-calling loop (bounded by `stopWhen`)
- * - the `searchCorpus` tool retrieves grounding passages from pgvector
- * - retrieved content is fenced as untrusted (prompt-injection defense)
- * - tokens stream to the response; telemetry is logged on finish
- * - provider/credit errors before the first token return a JSON status so the
- *   client can fall back to the local generator.
- */
 export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
   const retrieve = deps.retrieve ?? defaultRetrieve;
   const maxSteps = deps.maxSteps ?? 4;

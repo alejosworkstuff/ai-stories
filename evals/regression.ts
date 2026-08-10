@@ -17,7 +17,6 @@ export function checkRegression(
   baseline: EvalBaseline,
   passThreshold = 0.8
 ): { ok: boolean; detail?: string } {
-  // Only flag overall regression when quality drops below the pass threshold.
   if (overall < baseline.overall && overall < passThreshold) {
     return {
       ok: false,

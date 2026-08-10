@@ -76,11 +76,6 @@ function createHistoryItem(entry, index) {
   return li;
 }
 
-/**
- * Paint history from storage. No fade on mutations — use `entrance` only for expand.
- * @param {HTMLElement | null} historyEl
- * @param {{ favoritesOnly?: boolean, entrance?: boolean }} [options]
- */
 export function loadHistory(historyEl, { favoritesOnly = false, entrance = false } = {}) {
   if (!historyEl) return;
 
@@ -133,12 +128,6 @@ export async function deleteHistoryItemAnimated(historyEl, id, { favoritesOnly =
   }
 }
 
-/**
- * Favorite elevates to top (FLIP); unfavorite reorders or exits when filter is on.
- * @param {HTMLElement | null} historyEl
- * @param {string} id
- * @param {{ favoritesOnly?: boolean }} [options]
- */
 export async function toggleFavoriteAnimated(historyEl, id, { favoritesOnly = false } = {}) {
   if (!historyEl || historyBusy) return;
   const li = historyEl.querySelector(`.history-item[data-id="${CSS.escape(id)}"]`);
@@ -261,7 +250,6 @@ function clearTypingState(outputEl) {
   outputEl?.classList.remove("is-typing");
 }
 
-/** Instant full render (history restore, final snap, errors). */
 export function renderStory(output, { outputEl, copyBtn, statsEl, updateStats, animate = true }) {
   stopTypewriter({ snap: false });
   clearTypingState(outputEl);
@@ -277,17 +265,12 @@ export function renderStory(output, { outputEl, copyBtn, statsEl, updateStats, a
   outputEl.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" });
 }
 
-/**
- * Feed the live stream into the typewriter. Accumulated `text` is the target;
- * characters reveal with spring catch-up toward that target.
- */
 export function appendStoryChunk(text, { outputEl, copyBtn, statsEl, updateStats }) {
   if (!outputEl) return;
   const tw = ensureTypewriter(outputEl, { copyBtn, updateStats });
   tw.setTarget(stripCorpusCitations(text));
 }
 
-/** Wait for the typewriter to catch up to `text`, then clear the stream session. */
 export async function completeStoryStream(text, { outputEl, copyBtn, statsEl, updateStats }) {
   if (!outputEl) return;
   const finalText = stripCorpusCitations(text);

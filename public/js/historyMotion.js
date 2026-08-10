@@ -19,13 +19,6 @@ export function measureHistoryRects(root) {
   return map;
 }
 
-/**
- * FLIP remaining items into their new layout slots (Motion/reactbits-style layout tween).
- * @param {ParentNode | null} root
- * @param {Map<string, DOMRect>} firstRects
- * @param {{ liftId?: string | null, duration?: number }} [options]
- * @returns {Promise<void>}
- */
 export function playHistoryFlip(root, firstRects, { liftId = null, duration = FLIP_MS } = {}) {
   if (!root || prefersReducedMotion() || firstRects.size === 0) {
     return Promise.resolve();
@@ -82,13 +75,6 @@ export function playHistoryFlip(root, firstRects, { liftId = null, duration = FL
   return Promise.all(playing).then(() => undefined);
 }
 
-/**
- * Slide the row left and fade out (reactbits swipe/dismiss style), then resolve.
- * Layout space is kept until the caller removes the node and FLIPs siblings.
- * @param {HTMLElement} el
- * @param {{ duration?: number }} [options]
- * @returns {Promise<void>}
- */
 export function animateHistoryExitLeft(el, { duration = EXIT_MS } = {}) {
   if (prefersReducedMotion()) {
     return Promise.resolve();
@@ -121,10 +107,6 @@ export function animateHistoryExitLeft(el, { duration = EXIT_MS } = {}) {
   });
 }
 
-/**
- * Staggered fade/slide entrance — only for expand (or first paint).
- * @param {ParentNode | null} root
- */
 export function playHistoryExpandEntrance(root) {
   if (!root) return;
   const items = [...root.querySelectorAll(".history-item")];

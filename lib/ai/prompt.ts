@@ -10,10 +10,6 @@ export function lengthDirective(length?: string): string {
   return LENGTH_DIRECTIVE[length as StoryLength] ?? LENGTH_DIRECTIVE.short;
 }
 
-/**
- * System prompt with role, grounding instructions, and prompt-injection
- * defenses: story content is treated as untrusted data, never as instructions.
- */
 export function buildSystemPrompt(tone?: string, length?: string): string {
   return [
     "You are a collaborative fiction writer continuing a story with the user.",

@@ -1,8 +1,3 @@
-/**
- * Lightweight motion helpers for the vanilla frontend.
- * Spring-style timing only — no linear easing.
- */
-
 export function prefersReducedMotion() {
   const matchMedia =
     typeof globalThis !== "undefined" ? globalThis.matchMedia : undefined;
@@ -10,12 +5,6 @@ export function prefersReducedMotion() {
   return matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/**
- * Character-by-character reveal that catches up to a streaming target.
- * Speed springs toward the backlog so large dumps still feel typed, not linear.
- *
- * @param {{ onUpdate: (visible: string) => void, charsPerSecond?: number }} options
- */
 export function createTypewriter({ onUpdate, charsPerSecond = 72 } = {}) {
   let target = "";
   let revealed = 0;
@@ -60,7 +49,6 @@ export function createTypewriter({ onUpdate, charsPerSecond = 72 } = {}) {
       return;
     }
 
-    // Spring toward a backlog-scaled target velocity (overshoot-friendly catch-up).
     const targetVelocity = baseRate + backlog * 18;
     const stiffness = 14;
     const damping = 9;
@@ -106,7 +94,6 @@ export function createTypewriter({ onUpdate, charsPerSecond = 72 } = {}) {
       ensureRunning();
     },
 
-    /** Snap to full target immediately. */
     finish() {
       stop();
       revealed = target.length;
@@ -115,7 +102,6 @@ export function createTypewriter({ onUpdate, charsPerSecond = 72 } = {}) {
       resolveSettle();
     },
 
-    /** Wait until the visible text has caught up to the current target. */
     done() {
       if (reduced || revealed >= target.length) {
         return Promise.resolve();
@@ -140,11 +126,6 @@ export function createTypewriter({ onUpdate, charsPerSecond = 72 } = {}) {
   };
 }
 
-/**
- * Staggered spring fade-in when items enter the viewport (whileInView equivalent).
- * @param {ParentNode} root
- * @param {string} [itemSelector]
- */
 export function observeStaggerInView(root, itemSelector = ".history-item") {
   if (!root) return () => {};
 
