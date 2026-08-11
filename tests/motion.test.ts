@@ -31,7 +31,7 @@ describe("motion typewriter", () => {
     const { createTypewriter } = await import("../public/js/motion.js");
     const updates: string[] = [];
     const tw = createTypewriter({
-      onUpdate: (text) => updates.push(text),
+      onUpdate: (text: string) => updates.push(text),
       charsPerSecond: 60,
     });
 
@@ -67,7 +67,9 @@ describe("motion typewriter", () => {
 
     const { createTypewriter } = await import("../public/js/motion.js");
     const updates: string[] = [];
-    const tw = createTypewriter({ onUpdate: (text) => updates.push(text) });
+    const tw = createTypewriter({
+      onUpdate: (text: string) => updates.push(text),
+    });
     tw.setTarget("Instant story");
     expect(updates).toEqual(["Instant story"]);
     expect(requestAnimationFrame).not.toHaveBeenCalled();

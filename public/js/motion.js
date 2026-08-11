@@ -5,6 +5,12 @@ export function prefersReducedMotion() {
   return matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+/**
+ * @param {{
+ *   onUpdate?: (text: string) => void;
+ *   charsPerSecond?: number;
+ * }} [options]
+ */
 export function createTypewriter({ onUpdate, charsPerSecond = 72 } = {}) {
   let target = "";
   let revealed = 0;
