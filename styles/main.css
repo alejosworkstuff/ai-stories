@@ -269,26 +269,28 @@
     @apply fixed inset-0 z-[10000] flex animate-fadeIn items-center justify-center bg-black/50;
   }
 
-  .fallback-modal,
-  .confirm-modal {
-    @apply max-w-sm animate-slideIn rounded-xl border-[3px] border-red-700 bg-stone-50 px-8 py-6 text-center shadow-2xl dark:bg-neutral-800;
+  .alert-pill {
+    @apply pointer-events-none fixed bottom-20 left-1/2 z-[10001] max-w-[min(90vw,28rem)] -translate-x-1/2 rounded-full bg-red-700 px-4 py-2 text-center text-sm font-medium text-white shadow-lg;
+  }
+
+  .alert-pill.is-enter {
+    @apply animate-fadeIn;
+  }
+
+  .alert-pill.is-shaking {
+    @apply animate-toastShake;
+  }
+
+  .alert-pill.is-leaving {
+    @apply animate-fadeOut;
   }
 
   .confirm-modal {
-    @apply border-stone-400 dark:border-neutral-500;
-  }
-
-  .fallback-modal p,
-  .confirm-modal p {
-    @apply mb-5 text-lg font-semibold leading-relaxed text-red-700;
+    @apply max-w-sm animate-slideIn rounded-xl border-[3px] border-stone-400 bg-stone-50 px-8 py-6 text-center shadow-2xl dark:border-neutral-500 dark:bg-neutral-800;
   }
 
   .confirm-modal p {
-    @apply text-stone-800 dark:text-stone-100;
-  }
-
-  .fallback-dismiss {
-    @apply cursor-pointer rounded-md border-0 bg-red-700 px-6 py-2.5 text-base font-semibold text-white transition hover:bg-red-800;
+    @apply mb-5 text-lg font-semibold leading-relaxed text-stone-800 dark:text-stone-100;
   }
 
   .confirm-modal__actions {

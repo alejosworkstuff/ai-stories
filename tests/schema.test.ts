@@ -35,13 +35,22 @@ describe("generateRequestSchema", () => {
   it("accepts a minimal valid request", () => {
     const parsed = generateRequestSchema.safeParse({
       messages: [{ role: "user", content: "A knight rides east." }],
+      tone: "epic",
     });
     expect(parsed.success).toBe(true);
+  });
+
+  it("rejects missing tone", () => {
+    const parsed = generateRequestSchema.safeParse({
+      messages: [{ role: "user", content: "A knight rides east." }],
+    });
+    expect(parsed.success).toBe(false);
   });
 
   it("rejects unknown length values", () => {
     const parsed = generateRequestSchema.safeParse({
       messages: [{ role: "user", content: "seed" }],
+      tone: "noir",
       length: "xl",
     });
     expect(parsed.success).toBe(false);

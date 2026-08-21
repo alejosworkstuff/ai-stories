@@ -49,13 +49,17 @@ export function validateGenerateRequest(body: unknown): ValidationError | null {
     return { error: "invalid_length" };
   }
 
-  if (tone !== undefined) {
-    if (typeof tone !== "string") {
-      return { error: "invalid_tone" };
-    }
-    if (tone.trim() && tone.length > MAX_TONE_LENGTH) {
-      return { error: "tone_too_long" };
-    }
+  if (tone === undefined) {
+    return { error: "tone_required" };
+  }
+  if (typeof tone !== "string") {
+    return { error: "invalid_tone" };
+  }
+  if (!tone.trim()) {
+    return { error: "tone_required" };
+  }
+  if (tone.length > MAX_TONE_LENGTH) {
+    return { error: "tone_too_long" };
   }
 
   return null;

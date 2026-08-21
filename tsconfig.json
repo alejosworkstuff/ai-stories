@@ -16,6 +16,6 @@
     "noEmit": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["api", "lib", "scripts", "evals", "tests", "public/js/http.js", "public/js/localGenerator.js"],
+  "include": ["api", "lib", "scripts", "evals", "tests", "public/js"],
   "exclude": ["node_modules", "public", "e2e"]
 }

@@ -1,6 +1,14 @@
 import { whenReady, stripCorpusCitations } from "./utils.js";
 import { RANDOM_SEEDS } from "./constants.js";
-import { saveStory, clearStories, clearNonFavorites, getStories } from "./storage.js";
+import {
+  saveStory,
+  clearStories,
+  clearNonFavorites,
+  getStories,
+  loadSession,
+  saveSession,
+  createSessionId,
+} from "./storage.js";
 import { streamStory } from "./api.js";
 import { normalizeApiError } from "./http.js";
 import { generateLocalStory } from "./localGenerator.js";
@@ -18,7 +26,7 @@ import {
   renderError,
   renderGenerating,
   updateStats,
-  showFallbackModal,
+  showAlertPill,
   showDeleteHistoryModal,
   setLoading,
 } from "./ui.js";
@@ -49,8 +57,10 @@ const ELEMENTS = {
   themeToggle: document.getElementById("themeToggle"),
 };
 
+const GENRE_REQUIRED_MESSAGE = "Add a genre to create a story.";
+
 let messages = [];
-let fallbackPopupShown = false;
+let sessionId = createSessionId();
 let favoritesOnly = false;
 
 const FALLBACK_MESSAGE = {
@@ -104,9 +114,68 @@ function setContinueEnabled(enabled) {
   ELEMENTS.continueBtn.disabled = !enabled;
 }
 
+function persistSession() {
+  saveSession({
+    sessionId,
+    messages,
+    seed: ELEMENTS.seedEl?.value ?? "",
+    tone: ELEMENTS.toneEl?.value ?? "",
+    length: ELEMENTS.lengthEl?.value ?? "short",
+  });
+}
+
+function applyLengthToUi(length) {
+  if (!ELEMENTS.lengthEl || !ELEMENTS.lengthValue || !ELEMENTS.lengthOptions) return;
+  const allowed = new Set(["short", "medium", "long"]);
+  const value = allowed.has(length) ? length : "short";
+  ELEMENTS.lengthEl.value = value;
+
+  const optionButton = ELEMENTS.lengthOptions.querySelector(`[data-value="${value}"]`);
+  if (optionButton) {
+    ELEMENTS.lengthValue.textContent = optionButton.textContent;
+    ELEMENTS.lengthOptions.querySelectorAll("[role='option']").forEach((option) => {
+      option.setAttribute("aria-selected", String(option.contains(optionButton)));
+    });
+  }
+}
+
+function restoreSession() {
+  const saved = loadSession();
+  if (!saved) return false;
+
+  sessionId = saved.sessionId || createSessionId();
+  messages = saved.messages ?? [];
+
+  if (ELEMENTS.seedEl && saved.seed) ELEMENTS.seedEl.value = saved.seed;
+  if (ELEMENTS.toneEl && saved.tone) ELEMENTS.toneEl.value = saved.tone;
+  applyLengthToUi(saved.length || "short");
+
+  if (hasActiveConversation()) {
+    const fullStory = getStoryText();
+    renderStory(fullStory, {
+      outputEl: ELEMENTS.out,
+      copyBtn: ELEMENTS.copyBtn,
+      statsEl: ELEMENTS.stats,
+      updateStats: (text) => updateStats(text, ELEMENTS.stats),
+      animate: false,
+    });
+    setContinueEnabled(true);
+  }
+
+  return true;
+}
+
+function requireGenre() {
+  const tone = (ELEMENTS.toneEl?.value ?? "").trim();
+  if (tone) return tone;
+
+  showAlertPill(GENRE_REQUIRED_MESSAGE);
+  ELEMENTS.toneEl?.focus();
+  return null;
+}
+
 async function runStoryRequest({ isContinuation }) {
   const seed = (ELEMENTS.seedEl?.value ?? "").trim();
-  const tone = (ELEMENTS.toneEl?.value ?? "").trim();
   const length = ELEMENTS.lengthEl?.value ?? "short";
 
   setLoading(true, {
@@ -114,6 +183,17 @@ async function runStoryRequest({ isContinuation }) {
     regenBtn: ELEMENTS.regenBtn,
     continueBtn: ELEMENTS.continueBtn,
   });
+
+  const tone = requireGenre();
+  if (!tone) {
+    setLoading(false, {
+      btn: ELEMENTS.btn,
+      regenBtn: ELEMENTS.regenBtn,
+      continueBtn: ELEMENTS.continueBtn,
+    });
+    setContinueEnabled(hasActiveConversation());
+    return;
+  }
 
   if (isContinuation) {
     if (!hasActiveConversation()) {
@@ -145,6 +225,7 @@ async function runStoryRequest({ isContinuation }) {
   }
 
   renderGenerating(ELEMENTS.out);
+  persistSession();
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -157,10 +238,7 @@ async function runStoryRequest({ isContinuation }) {
   };
 
   async function useLocalFallback(message) {
-    if (!fallbackPopupShown) {
-      fallbackPopupShown = true;
-      showFallbackModal(message);
-    }
+    showAlertPill(message);
 
     const storySeed = seed || messages[0]?.content || "the story";
     const newPart = stripCorpusCitations(generateLocalStory(storySeed, tone, length));
@@ -172,6 +250,7 @@ async function runStoryRequest({ isContinuation }) {
       renderStory(fullStory, { ...streamUi, animate: false });
     }
     saveStory(fullStory);
+    persistSession();
     refreshHistory();
     setContinueEnabled(hasActiveConversation());
   }
@@ -179,7 +258,7 @@ async function runStoryRequest({ isContinuation }) {
   try {
     let streamed = "";
     const { res, data, text } = await streamStory(
-      { messages, ...(tone ? { tone } : {}), length },
+      { messages, tone, length, sessionId },
       {
         signal: controller.signal,
         onToken: (chunk) => {
@@ -208,6 +287,7 @@ async function runStoryRequest({ isContinuation }) {
       renderStory(fullStory, { ...streamUi, animate: false });
     }
     saveStory(fullStory);
+    persistSession();
     refreshHistory();
     setContinueEnabled(hasActiveConversation());
   } catch {
@@ -264,6 +344,7 @@ function onSelectStory(story) {
     updateStats: (text) => updateStats(text, ELEMENTS.stats),
   });
   setContinueEnabled(true);
+  persistSession();
 }
 
 function setLengthDropdownOpen(isOpen) {
@@ -286,13 +367,20 @@ function selectLengthOption(optionButton) {
   });
 
   setLengthDropdownOpen(false);
+  persistSession();
 }
 
 function init() {
   initDarkMode(ELEMENTS.themeToggle);
-  generateRandomSeed();
+  const restored = restoreSession();
+  if (!restored) {
+    generateRandomSeed();
+    persistSession();
+  }
   refreshHistory();
-  setContinueEnabled(false);
+  if (!hasActiveConversation()) {
+    setContinueEnabled(false);
+  }
 }
 
 function bindEvents() {
@@ -387,6 +475,8 @@ function bindEvents() {
   ELEMENTS.toneEl?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") createStory();
   });
+  ELEMENTS.seedEl?.addEventListener("change", persistSession);
+  ELEMENTS.toneEl?.addEventListener("change", persistSession);
   ELEMENTS.continuePromptEl?.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && hasActiveConversation()) continueStory();
   });

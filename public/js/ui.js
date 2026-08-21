@@ -312,27 +312,82 @@ export function updateStats(text, statsEl) {
   statsEl.innerHTML = `Words: ${words} | Characters: ${chars}`;
 }
 
-export function showFallbackModal(message) {
-  const overlay = document.createElement("div");
-  overlay.className = "fallback-overlay";
-  overlay.innerHTML = `
-    <div class="fallback-modal">
-      <p>${escapeHtml(message)}</p>
-      <button class="fallback-dismiss" type="button">OK</button>
-    </div>
-  `;
+const TOAST_MS = 5000;
 
-  function dismiss() {
-    overlay.remove();
-    document.body.style.overflow = "";
+/** @type {HTMLElement | null} */
+let activeAlertPill = null;
+/** @type {ReturnType<typeof setTimeout> | null} */
+let alertPillTimer = null;
+
+function clearAlertPillTimer() {
+  if (alertPillTimer != null) {
+    clearTimeout(alertPillTimer);
+    alertPillTimer = null;
+  }
+}
+
+function removeAlertPill() {
+  clearAlertPillTimer();
+  if (!activeAlertPill) return;
+  const pill = activeAlertPill;
+  activeAlertPill = null;
+  pill.classList.add("is-leaving");
+  const cleanup = () => pill.remove();
+  pill.addEventListener("animationend", cleanup, { once: true });
+  setTimeout(cleanup, 300);
+}
+
+function scheduleAlertPillDismiss() {
+  clearAlertPillTimer();
+  alertPillTimer = setTimeout(() => {
+    removeAlertPill();
+  }, TOAST_MS);
+}
+
+function shakeAlertPill(pill) {
+  pill.classList.remove("is-shaking");
+  void pill.offsetWidth;
+  pill.classList.add("is-shaking");
+  const onEnd = (event) => {
+    if (event.animationName && !String(event.animationName).includes("shake")) return;
+    pill.classList.remove("is-shaking");
+    pill.removeEventListener("animationend", onEnd);
+  };
+  pill.addEventListener("animationend", onEnd);
+}
+
+/** @param {string} message */
+export function showAlertPill(message) {
+  const text = String(message || "").trim();
+  if (!text) return;
+
+  if (activeAlertPill && document.body.contains(activeAlertPill)) {
+    const label = activeAlertPill.querySelector(".alert-pill__text");
+    if (label) label.textContent = text;
+    activeAlertPill.setAttribute("aria-label", text);
+    shakeAlertPill(activeAlertPill);
+    scheduleAlertPillDismiss();
+    return;
   }
 
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) dismiss();
-  });
-  overlay.querySelector(".fallback-dismiss").addEventListener("click", dismiss);
-  document.body.style.overflow = "hidden";
-  document.body.appendChild(overlay);
+  const pill = document.createElement("div");
+  pill.className = "alert-pill is-enter";
+  pill.setAttribute("role", "status");
+  pill.setAttribute("aria-live", "polite");
+  pill.setAttribute("aria-label", text);
+  pill.innerHTML = `<span class="alert-pill__text">${escapeHtml(text)}</span>`;
+  pill.addEventListener(
+    "animationend",
+    (event) => {
+      if (event.target !== pill) return;
+      pill.classList.remove("is-enter");
+    },
+    { once: true }
+  );
+
+  activeAlertPill = pill;
+  document.body.appendChild(pill);
+  scheduleAlertPillDismiss();
 }
 
 /**

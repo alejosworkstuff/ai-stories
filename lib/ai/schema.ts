@@ -19,7 +19,7 @@ export type StoryMessage = z.infer<typeof messageSchema>;
 
 export const generateRequestSchema = z.object({
   messages: z.array(messageSchema).min(1).max(MAX_MESSAGES),
-  tone: z.string().min(1).max(MAX_TONE_LENGTH).optional(),
+  tone: z.string().trim().min(1).max(MAX_TONE_LENGTH),
   length: z.enum(ALLOWED_LENGTHS).optional(),
   sessionId: z.string().uuid().optional(),
 });

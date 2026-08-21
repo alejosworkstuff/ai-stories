@@ -11,10 +11,10 @@ Engineering reference for the AI Stories flagship: how retrieval grounds generat
 
 ```text
 ┌─────────────┐  POST {messages,   ┌────────────────────────────────────────┐
-│   Browser   │  tone, length}     │       /api/generate-stories            │
-│ (vanilla JS)│ ─────────────────▶ │  rate limit → Zod validate → screen    │
-└──────┬──────┘                    │  injection → createStoryStreamer()     │
-       │                           └──────────────────┬─────────────────────┘
+│   Browser   │  tone*, length,    │       /api/generate-stories            │
+│ (vanilla JS)│  sessionId}        │  rate limit → validate → screen        │
+│ sessionStorage│ ───────────────▶ │  injection → createStoryStreamer()     │
+└──────┬──────┘                    └──────────────────┬─────────────────────┘
        │  text/plain token stream                     │
        │ ◀────────────────────────────────────────────┤ streamText (Groq)
        │                                              │ + searchCorpus tool
@@ -34,6 +34,10 @@ Engineering reference for the AI Stories flagship: how retrieval grounds generat
 │ generateLocalStory() │  deterministic offline fallback (v1 layer)
 └──────────────────────┘
 ```
+
+`tone` (genre) is required. Missing genre returns `tone_required` and never calls the model or local fallback; the client shows a short alert pill.
+
+**Session memory:** tab `sessionStorage` holds `sessionId`, messages, seed, tone, and length so Continue survives reload. Requests include `sessionId`.
 
 | Layer | Module | Responsibility |
 | --- | --- | --- |

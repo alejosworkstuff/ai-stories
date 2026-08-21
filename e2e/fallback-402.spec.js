@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const SEED = "A detective in Paris";
+const TONE = "noir";
 
 const INTRO_PREFIXES = [
   "It began with",
@@ -19,20 +20,22 @@ test.beforeEach(async ({ page }) => {
   });
 
   await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
   await page.reload();
 });
 
-test("402 from API shows fallback modal and local story", async ({ page }) => {
+test("402 from API shows fallback pill and local story", async ({ page }) => {
   await page.locator("#seed").fill(SEED);
+  await page.locator("#tone").fill(TONE);
   await page.getByRole("button", { name: "Create" }).click();
 
-  await expect(page.locator(".fallback-modal p")).toContainText(
-    "Out of credits - generating fallback story",
-    { timeout: 15_000 }
-  );
-  await page.getByRole("button", { name: "OK" }).click();
-  await expect(page.locator(".fallback-overlay")).toHaveCount(0);
+  const pill = page.locator(".alert-pill");
+  await expect(pill).toContainText("Out of credits - generating fallback story", {
+    timeout: 15_000,
+  });
 
   const output = await page.locator("#output pre").textContent();
   expect(output).toContain(SEED);
@@ -42,4 +45,7 @@ test("402 from API shows fallback modal and local story", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Copy story" })).toBeVisible();
   await expect(page.locator("#history li").first()).toContainText("detective");
   await expect(page.locator("#continueBtn")).toBeEnabled();
+
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(pill).toHaveClass(/is-shaking/);
 });

@@ -16,8 +16,23 @@ test.beforeEach(async ({ page }) => {
   });
 
   await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
   await page.reload();
+});
+
+test("blocks create without a genre and shows alert pill", async ({ page }) => {
+  await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await expect(page.locator(".alert-pill")).toContainText("Add a genre to create a story.");
+  await expect(page.locator("#history li")).toHaveCount(0);
+  await expect(page.locator("#output pre")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.locator(".alert-pill")).toHaveClass(/is-shaking/);
 });
 
 test("generate a story and see output, stats, and history", async ({ page }) => {
@@ -31,6 +46,23 @@ test("generate a story and see output, stats, and history", async ({ page }) => 
   await expect(page.locator("#stats")).toContainText("Words:");
   await expect(page.getByRole("button", { name: "Copy story" })).toBeVisible();
   await expect(page.locator("#history li").first()).toContainText("violinist");
+  await expect(page.locator("#continueBtn")).toBeEnabled();
+});
+
+test("session memory restores conversation after reload", async ({ page }) => {
+  await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.locator("#tone").fill("romantic cyberpunk");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.locator("#output pre")).toContainText("violinist in Buenos Aires", {
+    timeout: 15_000,
+  });
+  await expect(page.locator("#continueBtn")).toBeEnabled();
+  await expect(page.locator("#history li")).toHaveCount(1);
+
+  await page.reload();
+
+  await expect(page.locator("#tone")).toHaveValue("romantic cyberpunk");
+  await expect(page.locator("#output pre")).toContainText("violinist in Buenos Aires");
   await expect(page.locator("#continueBtn")).toBeEnabled();
 });
 
@@ -48,10 +80,12 @@ test("delete one history item and clear all", async ({ page }) => {
   });
 
   await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.locator("#tone").fill("romantic cyberpunk");
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator("#history li")).toHaveCount(1);
 
   await page.locator("#seed").fill("A detective who can hear lies");
+  await page.locator("#tone").fill("noir");
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator("#history li")).toHaveCount(2);
 
@@ -86,10 +120,12 @@ test("favorite pins a story and filter shows only favorites", async ({ page }) =
   });
 
   await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.locator("#tone").fill("romantic cyberpunk");
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator("#history li")).toHaveCount(1);
 
   await page.locator("#seed").fill("A detective who can hear lies");
+  await page.locator("#tone").fill("noir");
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator("#history li")).toHaveCount(2);
   await expect(page.locator("#history li").first()).toContainText("detective");
@@ -124,10 +160,12 @@ test("delete only unfavourite stories keeps favorites", async ({ page }) => {
   });
 
   await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.locator("#tone").fill("romantic cyberpunk");
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator("#history li")).toHaveCount(1);
 
   await page.locator("#seed").fill("A detective who can hear lies");
+  await page.locator("#tone").fill("noir");
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator("#history li")).toHaveCount(2);
 
@@ -161,6 +199,7 @@ test("continue a story appends the next part", async ({ page }) => {
     }
 
     expect(body.messages.length).toBeGreaterThan(1);
+    expect(body.sessionId).toBeTruthy();
     expect(body.messages.at(-1)).toMatchObject({
       role: "user",
       content: "Add a mysterious stranger.",
@@ -174,6 +213,7 @@ test("continue a story appends the next part", async ({ page }) => {
   });
 
   await page.locator("#seed").fill("A violinist in Buenos Aires");
+  await page.locator("#tone").fill("romantic cyberpunk");
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator("#output pre")).toContainText("violinist in Buenos Aires");
 

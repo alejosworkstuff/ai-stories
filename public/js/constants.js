@@ -12,6 +12,7 @@ export const RANDOM_SEEDS = [
 export const STORAGE_KEYS = {
   storyHistory: "storyHistory",
   darkMode: "darkMode",
+  session: "storySession",
 };
 
 export const MAX_HISTORY = 20;
