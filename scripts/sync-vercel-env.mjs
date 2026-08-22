@@ -12,7 +12,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const envPath = resolve(root, ".env");
 
 const DEFAULT_BASE_URL = "https://api.groq.com/openai/v1";
-const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+const DEFAULT_MODEL = "openai/gpt-oss-120b";
 
 function parseEnvFile(path) {
   const out = {};

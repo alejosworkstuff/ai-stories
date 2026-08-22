@@ -3,7 +3,7 @@
 Engineering reference for the AI Stories flagship: how retrieval grounds generation, how quality is measured and gated in CI, and how the safety layer treats untrusted input at every boundary.
 
 **Live app:** [ai-stories-ashy.vercel.app](https://ai-stories-ashy.vercel.app/)  
-**Stack:** Vercel AI SDK · Groq (`llama-3.3-70b-versatile`) · Neon Postgres + pgvector
+**Stack:** Vercel AI SDK · Groq (`openai/gpt-oss-120b`) · Neon Postgres + pgvector
 
 ---
 

@@ -55,7 +55,7 @@ jobs:
           AI_BASE_URL: ${{ secrets.AI_BASE_URL }}
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          AI_MODEL: ${{ vars.AI_MODEL || 'llama-3.3-70b-versatile' }}
+          AI_MODEL: ${{ vars.AI_MODEL || 'openai/gpt-oss-120b' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FORCE_LOCAL_EMBEDDINGS: "1"
           EVAL_JUDGE: "1"

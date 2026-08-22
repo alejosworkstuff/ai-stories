@@ -32,7 +32,7 @@ describe("buildPromptPreview", () => {
 describe("estimateCostUsd", () => {
   it("returns zero for Groq free-tier model", () => {
     expect(
-      estimateCostUsd("llama-3.3-70b-versatile", { inputTokens: 1000, outputTokens: 500 })
+      estimateCostUsd("openai/gpt-oss-120b", { inputTokens: 1000, outputTokens: 500 })
     ).toBe(0);
   });
 

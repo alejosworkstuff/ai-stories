@@ -22,7 +22,7 @@ export interface GenerationTelemetry {
 }
 
 const COST_PER_MILLION: Record<string, { input: number; output: number }> = {
-  "llama-3.3-70b-versatile": { input: 0, output: 0 },
+  "openai/gpt-oss-120b": { input: 0, output: 0 },
   default: { input: 0.15, output: 0.6 },
 };
 
