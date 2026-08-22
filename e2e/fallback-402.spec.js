@@ -37,6 +37,9 @@ test("402 from API shows fallback pill and local story", async ({ page }) => {
     timeout: 15_000,
   });
 
+  await expect(page.locator("#output pre")).toContainText(SEED, {
+    timeout: 15_000,
+  });
   const output = await page.locator("#output pre").textContent();
   expect(output).toContain(SEED);
   expect(INTRO_PREFIXES.some((prefix) => output.startsWith(prefix))).toBe(true);
