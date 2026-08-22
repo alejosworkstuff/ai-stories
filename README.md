@@ -6,7 +6,7 @@ A story generator you can collaborate with in the browser. Generation is grounde
 
 **Live:** [ai-stories-ashy.vercel.app](https://ai-stories-ashy.vercel.app/)
 
-Built for an **AI-engineering** portfolio demo: Vercel AI SDK, Neon pgvector, Zod, prompt-injection defenses, and CI-gated evals. Chat default in production: **Groq** (`llama-4-scout-17b-16e-instruct`); the OpenAI-compatible layer can point at other providers via env.
+Built for an **AI-engineering** portfolio demo: Vercel AI SDK, Neon pgvector, Zod, prompt-injection defenses, and CI-gated evals. Chat default in production: **Groq** (`llama-3.3-70b-versatile`); the OpenAI-compatible layer can point at other providers via env.
 
 Architecture (RAG pipeline, eval methodology, three-zone safety): **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 
