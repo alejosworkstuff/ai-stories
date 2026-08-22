@@ -1,6 +1,6 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-export const CHAT_MODEL_ID = process.env.AI_MODEL ?? "llama-3.3-70b-versatile";
+export const CHAT_MODEL_ID = process.env.AI_MODEL ?? "llama-4-scout-17b-16e-instruct";
 export const EMBEDDING_MODEL_ID = process.env.AI_EMBEDDING_MODEL ?? "text-embedding-3-small";
 export const EMBEDDING_DIM = Number.parseInt(process.env.EMBEDDING_DIM ?? "1536", 10);
 
