@@ -1,27 +1,14 @@
 import { fetchWithResilience } from "./http.js";
+import { hasUnexpectedControlChars } from "./stream-debugger/control-chars.js";
+import { SseParser } from "./stream-debugger/parser.js";
 
 export function validateStreamOutput(text) {
   const value = String(text ?? "");
-  const hasUnexpectedControlChars = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(value);
+  const containsUnexpectedControlChars = hasUnexpectedControlChars(value);
   return {
-    valid: value.trim().length > 0 && !hasUnexpectedControlChars,
-    reason: value.trim().length === 0 ? "empty" : hasUnexpectedControlChars ? "control_chars" : null,
+    valid: value.trim().length > 0 && !containsUnexpectedControlChars,
+    reason: value.trim().length === 0 ? "empty" : containsUnexpectedControlChars ? "control_chars" : null,
   };
-}
-
-function parseSseBlock(block) {
-  let event = "message";
-  let data = "";
-  for (const line of block.split(/\r?\n/)) {
-    if (line.startsWith("event:")) event = line.slice(6).trim();
-    if (line.startsWith("data:")) data += `${line.slice(5).trim()}\n`;
-  }
-  if (!data) return null;
-  try {
-    return { event, payload: JSON.parse(data.trim()) };
-  } catch {
-    return { event: "error", payload: { type: "error", code: "malformed_event" } };
-  }
 }
 
 export async function streamStory(payload, { signal, onToken, onDiagnostic } = {}) {
@@ -71,7 +58,7 @@ export async function streamStory(payload, { signal, onToken, onDiagnostic } = {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let text = "";
-    let sseBuffer = "";
+    const sseParser = contentType.includes("text/event-stream") ? new SseParser() : null;
     let sawSse = false;
     let streamError = null;
     for (;;) {
@@ -82,17 +69,20 @@ export async function streamStory(payload, { signal, onToken, onDiagnostic } = {
       observeChunk(chunk);
       if (contentType.includes("text/event-stream")) {
         sawSse = true;
-        sseBuffer += chunk;
-        const blocks = sseBuffer.split(/\r?\n\r?\n/);
-        sseBuffer = blocks.pop() ?? "";
-        for (const block of blocks) {
-          const parsed = parseSseBlock(block);
-          if (!parsed) continue;
-          if (parsed.payload?.type === "token") {
-            text += parsed.payload.text;
-            onToken?.(parsed.payload.text);
-          } else if (parsed.payload?.type === "error") {
-            streamError = parsed.payload.code;
+        for (const event of sseParser.feed(chunk)) {
+          if (!event.data) continue;
+          let parsed;
+          try {
+            parsed = JSON.parse(event.data);
+          } catch {
+            streamError = "malformed_event";
+            continue;
+          }
+          if (parsed?.type === "token") {
+            text += parsed.text;
+            onToken?.(parsed.text);
+          } else if (parsed?.type === "error") {
+            streamError = parsed.code;
           }
         }
       } else {
@@ -100,9 +90,21 @@ export async function streamStory(payload, { signal, onToken, onDiagnostic } = {
         onToken?.(chunk);
       }
     }
-    if (sseBuffer && contentType.includes("text/event-stream")) {
-      const parsed = parseSseBlock(sseBuffer);
-      if (parsed?.payload?.type === "token") text += parsed.payload.text;
+    if (sseParser) {
+      for (const event of sseParser.flush()) {
+        if (!event.data) continue;
+        try {
+          const parsed = JSON.parse(event.data);
+          if (parsed?.type === "token") {
+            text += parsed.text;
+            onToken?.(parsed.text);
+          } else if (parsed?.type === "error") {
+            streamError = parsed.code;
+          }
+        } catch {
+          streamError = "malformed_event";
+        }
+      }
     }
     const validation = validateStreamOutput(text);
     if (sawSse && streamError) {

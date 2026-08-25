@@ -35,9 +35,27 @@ export interface StoryStreamerDeps {
   maxSteps?: number;
 }
 
-function writeStreamEvent(res: ResponseSink, event: unknown): void {
-  const payload = streamPayloadSchema.parse(event);
+export function writeStreamEvent(res: ResponseSink, event: unknown): boolean {
+  const validation = streamPayloadSchema.safeParse(event);
+  if (!validation.success) {
+    if (
+      typeof event === "object" &&
+      event !== null &&
+      (event as { type?: unknown }).type === "token" &&
+      (event as { text?: unknown }).text === ""
+    ) {
+      return true;
+    }
+
+    console.error("invalid_stream_event", validation.error);
+    res.write(`event: error\ndata: ${JSON.stringify({ type: "error", code: "invalid_stream_event" })}\n\n`);
+    res.end();
+    return false;
+  }
+
+  const payload = validation.data;
   res.write(`event: ${payload.type}\ndata: ${JSON.stringify(payload)}\n\n`);
+  return true;
 }
 
 export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
@@ -78,6 +96,16 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
     let streamError: unknown = null;
     let firstChunkSent = false;
     let accumulated = "";
+
+    const startSseResponse = () => {
+      if (firstChunkSent) return;
+
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("Connection", "keep-alive");
+      firstChunkSent = true;
+    };
 
     const systemPrompt = buildSystemPrompt(params.tone, params.length);
 
@@ -127,18 +155,15 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
               errorCode: "unsafe_output",
             };
           }
+          startSseResponse();
           writeStreamEvent(res, { type: "error", code: "unsafe_output" });
           break;
         }
 
-        if (!firstChunkSent) {
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-          res.setHeader("Cache-Control", "no-store");
-          res.setHeader("Connection", "keep-alive");
-          firstChunkSent = true;
+        startSseResponse();
+        if (!writeStreamEvent(res, { type: "token", text: chunk })) {
+          return { streamed: true };
         }
-        writeStreamEvent(res, { type: "token", text: chunk });
       }
     } catch (error) {
       if (!streamError) streamError = error;

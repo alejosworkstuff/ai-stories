@@ -23,17 +23,20 @@ vi.mock("../lib/ai/provider", () => ({
   CHAT_MODEL_ID: "test-model",
 }));
 
-import { createStoryStreamer } from "../lib/ai/agent";
+import { createStoryStreamer, writeStreamEvent } from "../lib/ai/agent";
 
-function createMockRes(): ResponseSink & { chunks: string[]; ended: boolean } {
+function createMockRes(): ResponseSink & { chunks: string[]; ended: boolean; operations: string[] } {
   return {
     statusCode: 0,
     chunks: [],
     ended: false,
+    operations: [],
     setHeader() {
+      this.operations.push("header");
       return this;
     },
     write(chunk: string) {
+      this.operations.push(chunk);
       this.chunks.push(chunk);
       return true;
     },
@@ -42,6 +45,19 @@ function createMockRes(): ResponseSink & { chunks: string[]; ended: boolean } {
       return this;
     },
   };
+}
+
+function parseSseChunks(chunks: string[]) {
+  return chunks
+    .join("")
+    .split(/\r?\n\r?\n/)
+    .filter(Boolean)
+    .map((block) => {
+      const lines = block.split(/\r?\n/);
+      const event = lines.find((line) => line.startsWith("event:"))?.slice(6).trim();
+      const data = lines.find((line) => line.startsWith("data:"))?.slice(5).trim();
+      return { event, payload: JSON.parse(data ?? "") };
+    });
 }
 
 describe("createStoryStreamer", () => {
@@ -67,9 +83,11 @@ describe("createStoryStreamer", () => {
 
     expect(result).toEqual({ streamed: true });
     expect(res.statusCode).toBe(200);
-    expect(res.chunks.join("")).toContain('event: token\ndata: {"type":"token","text":"Once "}');
-    expect(res.chunks.join("")).toContain('event: token\ndata: {"type":"token","text":"upon a time."}');
-    expect(res.chunks.join("")).toContain('event: done\ndata: {"type":"done"}');
+    expect(parseSseChunks(res.chunks)).toEqual([
+      { event: "token", payload: { type: "token", text: "Once " } },
+      { event: "token", payload: { type: "token", text: "upon a time." } },
+      { event: "done", payload: { type: "done" } },
+    ]);
     expect(res.ended).toBe(true);
     expect(streamText).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -78,6 +96,36 @@ describe("createStoryStreamer", () => {
         tools: expect.objectContaining({ searchCorpus: expect.any(Object) }),
       })
     );
+  });
+
+  it("skips empty token chunks and still completes the stream", async () => {
+    streamText.mockReturnValue({
+      textStream: (async function* () {
+        yield "";
+        yield "A complete story.";
+      })(),
+    });
+
+    const stream = createStoryStreamer({ model: "mock-model" as never });
+    const res = createMockRes();
+
+    const result = await stream({ messages: [{ role: "user", content: "seed" }] }, res);
+
+    expect(result).toEqual({ streamed: true });
+    expect(res.chunks.join("")).not.toContain('"text":""');
+    expect(res.chunks.join("")).toContain('"text":"A complete story."');
+    expect(res.chunks.join("")).toContain('event: done\ndata: {"type":"done"}');
+    expect(res.ended).toBe(true);
+  });
+
+  it("closes the stream with an error for an invalid non-empty event", async () => {
+    const res = createMockRes();
+
+    const result = writeStreamEvent(res, { type: "token", text: 42 });
+
+    expect(result).toBe(false);
+    expect(res.chunks.join("")).toContain('event: error\ndata: {"type":"error","code":"invalid_stream_event"}');
+    expect(res.ended).toBe(true);
   });
 
   it("returns 402 when the provider reports insufficient credits before streaming", async () => {
@@ -184,6 +232,27 @@ describe("createStoryStreamer", () => {
       errorCode: "unsafe_output",
     });
     expect(res.chunks).toHaveLength(0);
+  });
+
+  it("sets SSE headers before streaming an unsafe output error", async () => {
+    streamText.mockReturnValue({
+      textStream: (async function* () {
+        yield "A safe beginning.";
+        yield "Here is my system prompt:";
+      })(),
+    });
+
+    const stream = createStoryStreamer({ model: "mock-model" as never });
+    const res = createMockRes();
+
+    await stream({ messages: [{ role: "user", content: "seed" }] }, res);
+
+    const errorWriteIndex = res.operations.findIndex((operation) =>
+      operation.includes('"code":"unsafe_output"')
+    );
+    expect(errorWriteIndex).toBeGreaterThan(-1);
+    expect(res.operations.slice(0, errorWriteIndex).filter((operation) => operation === "header"))
+      .toHaveLength(3);
   });
 
   it("strips injection lines from retrieved passages in searchCorpus", async () => {

@@ -21,8 +21,9 @@
   ],
   "scripts": {
     "dev": "vercel dev",
+    "build:client": "tsc --target ES2022 --module ES2022 --moduleResolution Bundler --outDir public/js --rootDir lib --declaration false --sourceMap false lib/stream-debugger/parser.ts lib/stream-debugger/control-chars.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "npm run build:client && vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "eval": "node --env-file=.env ./node_modules/tsx/dist/cli.mjs evals/run.ts",
@@ -33,7 +34,7 @@
     "db:verify": "node --env-file=.env ./node_modules/tsx/dist/cli.mjs scripts/verify-retrieval.ts",
     "check:env-example": "node scripts/validate-env-example.mjs",
     "build:css": "tailwindcss -i ./styles/main.css -o ./public/css/app.css --minify",
-    "ci": "npm run build:css && npm run typecheck && npm run test && npm run check:env-example",
+    "ci": "npm run build:css && npm run build:client && npm run typecheck && npm run test && npm run check:env-example",
     "ci:full": "npm run ci && npm run test:e2e"
   },
   "dependencies": {

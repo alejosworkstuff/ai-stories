@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hasUnexpectedControlChars } from "./control-chars.js";
 
 export const streamPayloadSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("token"), text: z.string().min(1) }),
@@ -10,7 +11,7 @@ export const generatedStorySchema = z
   .string()
   .trim()
   .min(1)
-  .refine((value) => !/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(value), {
+  .refine((value) => !hasUnexpectedControlChars(value), {
     message: "Story contains unexpected control characters",
   });
 

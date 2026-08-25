@@ -238,6 +238,7 @@ async function runStoryRequest({ isContinuation }) {
   };
 
   async function useLocalFallback(message) {
+    renderStory("", { ...streamUi, animate: false });
     showAlertPill(message);
 
     const storySeed = seed || messages[0]?.content || "the story";

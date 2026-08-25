@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SseParser } from "../lib/stream-debugger/parser";
 import { streamEventSchema, streamPayloadSchema, validateGeneratedStory } from "../lib/stream-debugger/events";
-import { validateStreamOutput } from "../public/js/api.js";
+import { streamStory, validateStreamOutput } from "../public/js/api.js";
 
 describe("SseParser", () => {
   it("parses events split across chunks", () => {
@@ -83,5 +83,37 @@ describe("stream output validation", () => {
     expect(streamPayloadSchema.safeParse({ type: "token", text: "" }).success).toBe(false);
     expect(validateGeneratedStory("A complete story.").success).toBe(true);
     expect(validateGeneratedStory("\u0000").success).toBe(false);
+  });
+});
+
+describe("production SSE streaming", () => {
+  it("parses events split across chunks and flushes the final event", async () => {
+    const chunks = [
+      `event: token\r\ndata: {"type":"token","text":"Once "}\r\n\r`,
+      `\nevent: token\r\ndata: {"type":"token","text":"upon a time."}`,
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        headers: { get: (name: string) => (name === "content-type" ? "text/event-stream" : "") },
+        body: new ReadableStream({
+          start(controller) {
+            for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk));
+            controller.close();
+          },
+        }),
+      }))
+    );
+
+    const onToken = vi.fn();
+    const result = await streamStory({ prompt: "story" }, { onToken });
+
+    expect(result.text).toBe("Once upon a time.");
+    expect(onToken).toHaveBeenNthCalledWith(1, "Once ");
+    expect(onToken).toHaveBeenNthCalledWith(2, "upon a time.");
+    expect(result.validation).toEqual({ valid: true, reason: null });
+    vi.unstubAllGlobals();
   });
 });
