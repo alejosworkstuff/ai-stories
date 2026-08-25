@@ -10,6 +10,8 @@ Built for an **AI-engineering** portfolio demo: Vercel AI SDK, Neon pgvector, Zo
 
 Architecture (RAG pipeline, eval methodology, three-zone safety): **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 
+Internal streaming tool: **[docs/STREAM_DEBUGGER.md](./docs/STREAM_DEBUGGER.md)**
+
 ## Screenshots
 
 | Main form | Fallback mode | Dark mode |

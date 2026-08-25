@@ -6,6 +6,7 @@ import { prepareRetrievedContent, screenOutput } from "./guardrails.js";
 import { isCreditsError } from "./errors.js";
 import { logGeneration, buildPromptPreview, estimateCostUsd } from "./observability.js";
 import { retrieve as defaultRetrieve, type RetrievedChunk } from "../rag/retrieve.js";
+import { streamPayloadSchema, validateGeneratedStory } from "../stream-debugger/events.js";
 
 export interface GenerateParams {
   messages: Array<{ role: "user" | "assistant"; content: string }>;
@@ -32,6 +33,11 @@ export interface StoryStreamerDeps {
   retrieve?: (query: string, k?: number) => Promise<RetrievedChunk[]>;
   model?: ReturnType<typeof languageModel>;
   maxSteps?: number;
+}
+
+function writeStreamEvent(res: ResponseSink, event: unknown): void {
+  const payload = streamPayloadSchema.parse(event);
+  res.write(`event: ${payload.type}\ndata: ${JSON.stringify(payload)}\n\n`);
 }
 
 export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
@@ -121,16 +127,18 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
               errorCode: "unsafe_output",
             };
           }
+          writeStreamEvent(res, { type: "error", code: "unsafe_output" });
           break;
         }
 
         if (!firstChunkSent) {
           res.statusCode = 200;
-          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
           res.setHeader("Cache-Control", "no-store");
+          res.setHeader("Connection", "keep-alive");
           firstChunkSent = true;
         }
-        res.write(chunk);
+        writeStreamEvent(res, { type: "token", text: chunk });
       }
     } catch (error) {
       if (!streamError) streamError = error;
@@ -145,6 +153,14 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
       };
     }
 
+    const validation = validateGeneratedStory(accumulated);
+    if (!validation.success) {
+      writeStreamEvent(res, { type: "error", code: "invalid_output" });
+      res.end();
+      return { streamed: true };
+    }
+
+    writeStreamEvent(res, { type: "done" });
     res.end();
     return { streamed: true };
   };

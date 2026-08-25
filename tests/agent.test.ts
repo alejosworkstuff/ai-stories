@@ -67,7 +67,9 @@ describe("createStoryStreamer", () => {
 
     expect(result).toEqual({ streamed: true });
     expect(res.statusCode).toBe(200);
-    expect(res.chunks.join("")).toBe("Once upon a time.");
+    expect(res.chunks.join("")).toContain('event: token\ndata: {"type":"token","text":"Once "}');
+    expect(res.chunks.join("")).toContain('event: token\ndata: {"type":"token","text":"upon a time."}');
+    expect(res.chunks.join("")).toContain('event: done\ndata: {"type":"done"}');
     expect(res.ended).toBe(true);
     expect(streamText).toHaveBeenCalledWith(
       expect.objectContaining({

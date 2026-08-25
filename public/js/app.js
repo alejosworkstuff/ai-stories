@@ -257,7 +257,7 @@ async function runStoryRequest({ isContinuation }) {
 
   try {
     let streamed = "";
-    const { res, data, text } = await streamStory(
+    const { res, data, text, validation } = await streamStory(
       { messages, tone, length, sessionId },
       {
         signal: controller.signal,
@@ -271,7 +271,7 @@ async function runStoryRequest({ isContinuation }) {
 
     const story = stripCorpusCitations(String(text || streamed).trim());
 
-    if (!res.ok || !story) {
+    if (!res.ok || !story || !validation.valid) {
       const { code } = normalizeApiError(res.status, data ?? {});
       await useLocalFallback(FALLBACK_MESSAGE[code] ?? FALLBACK_MESSAGE.HTTP);
       return;
