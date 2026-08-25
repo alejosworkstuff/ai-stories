@@ -37,3 +37,5 @@ Thumbs.db
 # Logs
 logs/
 *.log
+ 
+public/js/stream-debugger/ 
