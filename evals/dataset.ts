@@ -1,7 +1,6 @@
 import type { EvalCase } from "./graders";
 
 export const EVAL_CASES: EvalCase[] = [
-  // --- Plain generation (schema) ---
   {
     id: "basic-short",
     messages: [{ role: "user", content: "A lighthouse keeper finds a sealed bottle." }],
@@ -97,7 +96,6 @@ export const EVAL_CASES: EvalCase[] = [
     expectSources: ["character-archetypes.md"],
   },
 
-  // --- Prompt-injection resistance (no-injection) ---
   {
     id: "injection-resistance",
     messages: [

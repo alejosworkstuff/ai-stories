@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-/**
- * Push required production env vars from .env to the linked Vercel project.
- * Usage: node scripts/sync-vercel-env.mjs
- */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";

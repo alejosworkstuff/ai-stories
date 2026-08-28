@@ -22,7 +22,6 @@ function getSql() {
   return neon(url);
 }
 
-/** pgvector wants a literal like '[0.1,0.2,...]'. */
 function toVectorLiteral(embedding: number[]): string {
   return `[${embedding.join(",")}]`;
 }

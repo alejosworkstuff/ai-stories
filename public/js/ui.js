@@ -223,7 +223,6 @@ export function bindHistoryDelete(historyEl, _clearBtn, handlers) {
 function triggerOutputReveal(outputEl) {
   if (!outputEl || prefersReducedMotion()) return;
   outputEl.classList.remove("is-revealing");
-  // Force reflow so the entrance animation can replay.
   void outputEl.offsetWidth;
   outputEl.classList.add("is-revealing");
 }

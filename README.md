@@ -31,6 +31,23 @@ Internal streaming tool: **[docs/STREAM_DEBUGGER.md](./docs/STREAM_DEBUGGER.md)*
 - **Fallback**: provider/credit errors degrade to a deterministic local generator
 - **TypeScript** on the server, Vitest + Playwright, GitHub Actions CI
 
+## Engineering notes
+
+- Request validation caps each message at 4,000 characters so the Create flow can
+	produce output that the Continue flow can resend without treating the limit as
+	a Groq provider limit.
+- Groq's JSON response mode requires the word `json` in the prompt. The story
+	pipeline therefore validates structured output with Zod and repairs invalid
+	JSON before returning it.
+- RAG embeddings are serialized as pgvector literals such as
+	`[0.1,0.2,...]` before database queries. Local 384-dimensional embeddings can
+	be forced with `FORCE_LOCAL_EMBEDDINGS=1`.
+- The browser persists the current session and history locally, including
+	favorites. Provider failures use the deterministic local generator as a
+	degraded path.
+- To synchronize the required production environment variables with the linked
+	Vercel project, run `node scripts/sync-vercel-env.mjs` from the project root.
+
 ## Run locally
 
 ```bash

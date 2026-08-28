@@ -6,7 +6,6 @@ export type StoryLength = (typeof ALLOWED_LENGTHS)[number];
 export const ALLOWED_ROLES = ["user", "assistant"] as const;
 export type MessageRole = (typeof ALLOWED_ROLES)[number];
 
-/** Per-message cap for request validation. Must fit model output from Create so Continue can resend prior turns; not a Groq hard limit. */
 export const MAX_MESSAGE_CONTENT_LENGTH = 4000;
 export const MAX_TONE_LENGTH = 120;
 export const MAX_MESSAGES = 20;

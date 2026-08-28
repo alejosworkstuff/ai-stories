@@ -24,7 +24,6 @@ export interface StoryObjectDeps {
 const REPAIR_SUFFIX =
   "\nRepair: your previous answer failed validation. Return schema-valid story JSON only — no meta commentary, tool names, or instruction leakage.";
 
-/** Groq requires the word "json" in messages when using response_format json_object. */
 const JSON_OUTPUT_SUFFIX = [
   " Respond with a single JSON object only (no markdown fences).",
   ' Exact keys: "title" (string), "paragraphs" (string[]), "choices" (string[], at least 2), "groundedOn" (string[] of corpus filenames or empty).',
