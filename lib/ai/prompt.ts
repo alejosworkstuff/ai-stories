@@ -13,6 +13,8 @@ export function lengthDirective(length?: string): string {
 export function buildSystemPrompt(tone?: string, length?: string): string {
   return [
     "You are a collaborative fiction writer continuing a story with the user.",
+    "When prior story text is present, write only the new next scene after its final moment.",
+    "Never repeat, summarize, or restart the prior story; begin with events that happen next.",
     tone ? `Tone: ${tone}.` : "",
     lengthDirective(length),
     "When the user's idea touches storytelling craft (structure, pacing, archetypes, voice),",

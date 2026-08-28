@@ -1,7 +1,7 @@
 import { STORAGE_KEYS, MAX_HISTORY } from "./constants.js";
 
 /**
- * @typedef {{ id: string, text: string, favorite: boolean }} StoryEntry
+ * @typedef {{ id: string, text: string, favorite: boolean, label?: string, children?: StoryEntry[] }} StoryEntry
  */
 
 /**
@@ -11,6 +11,7 @@ import { STORAGE_KEYS, MAX_HISTORY } from "./constants.js";
  *   seed: string,
  *   tone: string,
  *   length: string,
+ *   historyRootId?: string,
  * }} SessionState
  */
 
@@ -56,6 +57,7 @@ export function loadSession() {
       seed: typeof raw.seed === "string" ? raw.seed : "",
       tone: typeof raw.tone === "string" ? raw.tone : "",
       length: typeof raw.length === "string" ? raw.length : "short",
+      ...(typeof raw.historyRootId === "string" ? { historyRootId: raw.historyRootId } : {}),
     };
   } catch {
     return null;
@@ -73,6 +75,7 @@ export function saveSession(state) {
       seed: String(state.seed ?? ""),
       tone: String(state.tone ?? ""),
       length: String(state.length ?? "short"),
+      ...(state.historyRootId ? { historyRootId: state.historyRootId } : {}),
     })
   );
 }
@@ -84,17 +87,21 @@ export function clearSession() {
 /** @param {unknown} entry @returns {StoryEntry} */
 export function normalizeEntry(entry) {
   if (typeof entry === "string") {
-    return { id: createStoryId(), text: entry, favorite: false };
+    return { id: createStoryId(), text: entry, favorite: false, children: [] };
   }
   if (entry && typeof entry === "object") {
-    const raw = /** @type {{ id?: unknown, text?: unknown, favorite?: unknown }} */ (entry);
+    const raw = /** @type {{ id?: unknown, text?: unknown, favorite?: unknown, label?: unknown, children?: unknown }} */ (entry);
     return {
       id: typeof raw.id === "string" && raw.id ? raw.id : createStoryId(),
       text: String(raw.text ?? ""),
       favorite: Boolean(raw.favorite),
+      ...(typeof raw.label === "string" && raw.label ? { label: raw.label } : {}),
+      children: Array.isArray(raw.children)
+        ? raw.children.map(normalizeEntry).filter((child) => child.text.length > 0)
+        : [],
     };
   }
-  return { id: createStoryId(), text: "", favorite: false };
+  return { id: createStoryId(), text: "", favorite: false, children: [] };
 }
 
 /** @returns {StoryEntry[]} */
@@ -128,11 +135,40 @@ function persist(entries) {
 }
 
 export function saveStory(story) {
+  return saveStoryVersion(story);
+}
+
+export function saveStoryVersion(story, { parentId = null, label = "" } = {}) {
   const text = String(story);
   if (!text) return null;
 
   const saved = getStories();
-  const entry = { id: createStoryId(), text, favorite: false };
+  if (parentId) {
+    const parent = findStory(saved, parentId);
+    if (!parent) return null;
+    const existing = parent.entry.children?.find((child) => child.text === text);
+    if (existing) return existing;
+    const entry = {
+      id: createStoryId(),
+      text,
+      favorite: false,
+      ...(label ? { label } : {}),
+      children: [],
+    };
+    parent.entry.children ??= [];
+    parent.entry.children.unshift(entry);
+    persist(saved);
+    return entry;
+  }
+
+  if (saved[0]?.text === text) return saved[0];
+  const entry = {
+    id: createStoryId(),
+    text,
+    favorite: false,
+    ...(label ? { label } : {}),
+    children: [],
+  };
   saved.unshift(entry);
   while (saved.length > MAX_HISTORY) {
     const dropAt = [...saved.keys()].reverse().find((i) => !saved[i].favorite);
@@ -141,6 +177,19 @@ export function saveStory(story) {
   }
   persist(saved);
   return entry;
+}
+
+function findStory(entries, id, rootId = null) {
+  for (const entry of entries) {
+    if (entry.id === id) return { entry, rootId: rootId ?? entry.id };
+    const found = findStory(entry.children ?? [], id, rootId ?? entry.id);
+    if (found) return found;
+  }
+  return null;
+}
+
+export function findStoryById(id) {
+  return findStory(getStories(), id);
 }
 
 export function removeStoryAt(index) {
@@ -153,9 +202,17 @@ export function removeStoryAt(index) {
 
 export function removeStoryById(id) {
   const saved = getStories();
-  const index = saved.findIndex((entry) => entry.id === id);
-  if (index === -1) return false;
-  saved.splice(index, 1);
+  const found = findStory(saved, id);
+  if (!found) return false;
+  if (found.rootId === id) {
+    const index = saved.findIndex((entry) => entry.id === id);
+    saved.splice(index, 1);
+  } else {
+    const parent = findStory(saved, found.rootId);
+    const index = parent?.entry.children?.findIndex((entry) => entry.id === id) ?? -1;
+    if (!parent || index < 0) return false;
+    parent.entry.children?.splice(index, 1);
+  }
   persist(saved);
   return true;
 }
@@ -183,9 +240,11 @@ export function toggleFavoriteAt(index) {
 /** @returns {StoryEntry | null} */
 export function toggleFavoriteById(id) {
   const saved = getStories();
-  const index = saved.findIndex((entry) => entry.id === id);
-  if (index === -1) return null;
-  return toggleFavoriteAt(index);
+  const found = findStory(saved, id);
+  if (!found) return null;
+  found.entry.favorite = !found.entry.favorite;
+  persist(saved);
+  return found.entry;
 }
 
 export function clearStories() {

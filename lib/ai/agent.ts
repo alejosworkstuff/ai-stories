@@ -7,6 +7,7 @@ import { isCreditsError } from "./errors.js";
 import { logGeneration, buildPromptPreview, estimateCostUsd } from "./observability.js";
 import { retrieve as defaultRetrieve, type RetrievedChunk } from "../rag/retrieve.js";
 import { streamPayloadSchema, validateGeneratedStory } from "../stream-debugger/events.js";
+import { compactStoryMessages } from "./context.js";
 
 export interface GenerateParams {
   messages: Array<{ role: "user" | "assistant"; content: string }>;
@@ -88,7 +89,7 @@ export function createStoryStreamer(deps: StoryStreamerDeps = {}) {
       },
     });
 
-    const messages = params.messages.map((message) => ({
+    const messages = compactStoryMessages(params.messages).map((message) => ({
       role: message.role,
       content: message.content,
     })) as ModelMessage[];

@@ -48,7 +48,16 @@ function createHistoryItem(entry, index) {
 
   const text = document.createElement("span");
   text.className = "history-item__text";
-  text.textContent = storyPreview(entry.text);
+  text.textContent = entry.label || storyPreview(entry.text);
+
+  if (entry.children?.length) {
+    const collapseButton = document.createElement("button");
+    collapseButton.type = "button";
+    collapseButton.className = "history-item__collapse";
+    collapseButton.setAttribute("aria-label", "Collapse story versions");
+    collapseButton.textContent = "⌄";
+    li.appendChild(collapseButton);
+  }
 
   const favoriteBtn = document.createElement("button");
   favoriteBtn.type = "button";
@@ -73,6 +82,14 @@ function createHistoryItem(entry, index) {
   li.appendChild(text);
   li.appendChild(favoriteBtn);
   li.appendChild(deleteBtn);
+  if (entry.children?.length) {
+    const children = document.createElement("ul");
+    children.className = "history-children";
+    entry.children.forEach((child, childIndex) => {
+      children.appendChild(createHistoryItem(child, childIndex));
+    });
+    li.appendChild(children);
+  }
   return li;
 }
 
@@ -166,22 +183,35 @@ export function handleHistoryClick(historyEl, onSelectStory) {
   if (!historyEl) return;
 
   historyEl.addEventListener("click", (e) => {
-    if (
-      e.target.closest(".history-item__delete") ||
-      e.target.closest(".history-item__favorite")
-    ) {
+    if (e.target.closest(".history-item__delete") || e.target.closest(".history-item__favorite")) {
       return;
     }
 
     const li = e.target.closest("li");
-    if (!li || li.parentElement !== historyEl) return;
+    if (!li) return;
+    if (e.target.closest(".history-item__collapse")) {
+      li.classList.toggle("is-collapsed");
+      e.target.closest(".history-item__collapse").textContent = li.classList.contains("is-collapsed")
+        ? "›"
+        : "⌄";
+      return;
+    }
     const id = li.dataset.id;
     if (!id) return;
 
     const saved = getStories();
-    const entry = saved.find((item) => item.id === id);
+    const entry = findStoryEntry(saved, id);
     if (entry?.text) onSelectStory(entry.text);
   });
+}
+
+function findStoryEntry(entries, id) {
+  for (const entry of entries) {
+    if (entry.id === id) return entry;
+    const child = findStoryEntry(entry.children ?? [], id);
+    if (child) return child;
+  }
+  return null;
 }
 
 export function bindHistoryActions(historyEl, { onDeleteAt, onToggleFavorite }) {
@@ -193,7 +223,7 @@ export function bindHistoryActions(historyEl, { onDeleteAt, onToggleFavorite }) 
       e.preventDefault();
       e.stopPropagation();
       const li = favoriteBtn.closest("li");
-      if (!li || li.parentElement !== historyEl) return;
+      if (!li) return;
       const id = li.dataset.id;
       if (!id) return;
       onToggleFavorite(id);
@@ -207,7 +237,7 @@ export function bindHistoryActions(historyEl, { onDeleteAt, onToggleFavorite }) 
     e.stopPropagation();
 
     const li = deleteBtn.closest("li");
-    if (!li || li.parentElement !== historyEl) return;
+    if (!li) return;
     const id = li.dataset.id;
     if (!id) return;
 

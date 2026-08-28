@@ -2,6 +2,8 @@ import { whenReady, stripCorpusCitations } from "./utils.js";
 import { RANDOM_SEEDS } from "./constants.js";
 import {
   saveStory,
+  saveStoryVersion,
+  findStoryById,
   clearStories,
   clearNonFavorites,
   getStories,
@@ -13,7 +15,10 @@ import { streamStory } from "./api.js";
 import { initStreamScope } from "./streamscope.js";
 import { normalizeApiError } from "./http.js";
 import { generateLocalStory } from "./localGenerator.js";
+import { generateLocalContinuation } from "./localGenerator.js";
+import { compactStoryMessages } from "./story-context.js";
 import { initDarkMode, toggleDarkMode } from "./theme.js";
+import { initHudResize } from "./hud-resize.js";
 import {
   loadHistory,
   expandHistoryEntrance,
@@ -56,8 +61,9 @@ const ELEMENTS = {
   historyFilterFavorites: document.getElementById("historyFilterFavorites"),
   historyDeleteMenu: document.getElementById("historyDeleteMenu"),
   themeToggle: document.getElementById("themeToggle"),
-  streamscopeStart: document.getElementById("streamscopeStart"),
-  streamscopeStop: document.getElementById("streamscopeStop"),
+  streamscopeToggle: document.getElementById("streamscopeToggle"),
+  streamscopePanel: document.getElementById("streamscopePanel"),
+  outputResizeHandle: document.getElementById("outputResizeHandle"),
   streamscopeStatus: document.getElementById("streamscopeStatus"),
   streamscopeEventLog: document.getElementById("streamscopeEventLog"),
 };
@@ -67,6 +73,8 @@ const GENRE_REQUIRED_MESSAGE = "Add a genre to create a story.";
 let messages = [];
 let sessionId = createSessionId();
 let favoritesOnly = false;
+let streamScope = null;
+let historyRootId = null;
 
 const FALLBACK_MESSAGE = {
   CREDITS: "Out of credits - generating fallback story",
@@ -133,6 +141,7 @@ function persistSession() {
     seed: ELEMENTS.seedEl?.value ?? "",
     tone: ELEMENTS.toneEl?.value ?? "",
     length: ELEMENTS.lengthEl?.value ?? "short",
+    historyRootId,
   });
 }
 
@@ -157,6 +166,7 @@ function restoreSession() {
 
   sessionId = saved.sessionId || createSessionId();
   messages = saved.messages ?? [];
+  historyRootId = saved.historyRootId || null;
 
   if (ELEMENTS.seedEl && saved.seed) ELEMENTS.seedEl.value = saved.seed;
   if (ELEMENTS.toneEl && saved.tone) ELEMENTS.toneEl.value = saved.tone;
@@ -186,9 +196,11 @@ function requireGenre() {
   return null;
 }
 
-async function runStoryRequest({ isContinuation }) {
+async function runStoryRequest({ isContinuation, isRegeneration = false }) {
   const seed = (ELEMENTS.seedEl?.value ?? "").trim();
   const length = ELEMENTS.lengthEl?.value ?? "short";
+  const continuationPrompt =
+    (ELEMENTS.continuePromptEl?.value ?? "").trim() || "Continue the story.";
 
   setLoading(true, {
     btn: ELEMENTS.btn,
@@ -218,9 +230,10 @@ async function runStoryRequest({ isContinuation }) {
       return;
     }
 
-    const prompt =
-      (ELEMENTS.continuePromptEl?.value ?? "").trim() || "Continue the story.";
-    messages.push({ role: "user", content: prompt });
+    messages.push({
+      role: "user",
+      content: `${continuationPrompt} Continue only from the final moment; do not repeat earlier text.`,
+    });
   } else {
     if (!seed) {
       renderError("Put a seed.", ELEMENTS.out);
@@ -254,7 +267,11 @@ async function runStoryRequest({ isContinuation }) {
     showAlertPill(message);
 
     const storySeed = seed || messages[0]?.content || "the story";
-    const newPart = stripCorpusCitations(generateLocalStory(storySeed, tone, length));
+    const newPart = stripCorpusCitations(
+      isContinuation
+        ? generateLocalContinuation(getStoryText(), continuationPrompt, tone, length)
+        : generateLocalStory(storySeed, tone, length)
+    );
     messages.push({ role: "assistant", content: newPart });
     appendStoryChunk(newPart, streamUi);
     await completeStoryStream(newPart, streamUi);
@@ -262,7 +279,13 @@ async function runStoryRequest({ isContinuation }) {
     if (fullStory !== newPart) {
       renderStory(fullStory, { ...streamUi, animate: false });
     }
-    saveStory(fullStory);
+    const savedEntry = isContinuation || isRegeneration
+      ? saveStoryVersion(fullStory, {
+          parentId: historyRootId,
+          label: isContinuation ? "Continue story" : "Regenerate story",
+        })
+      : saveStoryVersion(fullStory, { label: seed });
+    if (savedEntry && !historyRootId) historyRootId = savedEntry.id;
     persistSession();
     refreshHistory();
     setContinueEnabled(hasActiveConversation());
@@ -271,13 +294,14 @@ async function runStoryRequest({ isContinuation }) {
   try {
     let streamed = "";
     const { res, data, text, validation } = await streamStory(
-      { messages, tone, length, sessionId },
+      { messages: compactStoryMessages(messages), tone, length, sessionId },
       {
         signal: controller.signal,
         onToken: (chunk) => {
           streamed += chunk;
           appendStoryChunk(streamed, streamUi);
         },
+        onDiagnostic: (diagnostic) => streamScope?.recordDiagnostic(diagnostic),
       }
     );
     clearTimeout(timeoutId);
@@ -307,7 +331,13 @@ async function runStoryRequest({ isContinuation }) {
     if (fullStory !== story) {
       renderStory(fullStory, { ...streamUi, animate: false });
     }
-    saveStory(fullStory);
+    const savedEntry = isContinuation || isRegeneration
+      ? saveStoryVersion(fullStory, {
+          parentId: historyRootId,
+          label: isContinuation ? "Continue story" : "Regenerate story",
+        })
+      : saveStoryVersion(fullStory, { label: seed });
+    if (savedEntry && !historyRootId) historyRootId = savedEntry.id;
     persistSession();
     refreshHistory();
     setContinueEnabled(hasActiveConversation());
@@ -325,11 +355,12 @@ async function runStoryRequest({ isContinuation }) {
 }
 
 async function createStory() {
+  historyRootId = null;
   await runStoryRequest({ isContinuation: false });
 }
 
 async function regenerateStory() {
-  await runStoryRequest({ isContinuation: false });
+  await runStoryRequest({ isContinuation: false, isRegeneration: true });
 }
 
 async function continueStory() {
@@ -358,6 +389,8 @@ function onSelectStory(story) {
     { role: "user", content: seed },
     { role: "assistant", content: clean },
   ];
+  const selected = getStories().flatMap((entry) => [entry, ...(entry.children ?? [])]).find((entry) => entry.text === story);
+  historyRootId = selected ? (findStoryById(selected.id)?.rootId ?? selected.id) : null;
   renderStory(clean, {
     outputEl: ELEMENTS.out,
     copyBtn: ELEMENTS.copyBtn,
@@ -406,18 +439,22 @@ function init() {
 
 function bindEvents() {
   if (
-    ELEMENTS.streamscopeStart &&
-    ELEMENTS.streamscopeStop &&
+    ELEMENTS.streamscopeToggle &&
+    ELEMENTS.streamscopePanel &&
     ELEMENTS.streamscopeStatus &&
     ELEMENTS.streamscopeEventLog
   ) {
-    initStreamScope({
-      startButton: ELEMENTS.streamscopeStart,
-      stopButton: ELEMENTS.streamscopeStop,
+    streamScope = initStreamScope({
+      toggleButton: ELEMENTS.streamscopeToggle,
+      panel: ELEMENTS.streamscopePanel,
       status: ELEMENTS.streamscopeStatus,
       eventLog: ELEMENTS.streamscopeEventLog,
     });
   }
+  initHudResize(
+    ELEMENTS.out?.parentElement,
+    ELEMENTS.outputResizeHandle
+  );
   ELEMENTS.btn?.addEventListener("click", createStory);
   ELEMENTS.regenBtn?.addEventListener("click", regenerateStory);
   ELEMENTS.continueBtn?.addEventListener("click", continueStory);

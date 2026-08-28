@@ -6,7 +6,7 @@ export type StoryLength = (typeof ALLOWED_LENGTHS)[number];
 export const ALLOWED_ROLES = ["user", "assistant"] as const;
 export type MessageRole = (typeof ALLOWED_ROLES)[number];
 
-export const MAX_MESSAGE_CONTENT_LENGTH = 4000;
+export const MAX_MESSAGE_CONTENT_LENGTH = 12_000;
 export const MAX_TONE_LENGTH = 120;
 export const MAX_MESSAGES = 20;
 

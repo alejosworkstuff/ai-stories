@@ -12,14 +12,13 @@ The generation endpoint now emits structured `text/event-stream` events for toke
 - `events.ts` defines Zod-backed events for parsed SSE data, stream phases, and metrics.
 - `tests/stream-debugger.test.ts` protects protocol edge cases before UI integration.
 - `public/js/api.js` exposes the runtime hook through `onDiagnostic`, parses the SSE envelope, and rejects empty/control-character output at the application boundary.
-- `api/demo-stream.ts` provides a deterministic local SSE source for the internal debugger.
-- `public/js/streamscope.js` consumes the source with `fetch` + `ReadableStream`, exposes `Start`/`Stop`, and renders the session event log.
+- `public/js/api.js` reports live connection, chunk, and completion diagnostics through `onDiagnostic`.
+- `public/js/streamscope.js` renders diagnostics from the real story generation stream behind the StreamScope gear button.
 
-The demo source emits token events followed by a clean `done` event. Its UI is intentionally a small session shell; timeline metrics, stalls, retries, and failure scenarios belong to later build days.
+`api/demo-stream.ts` remains available as a deterministic protocol fixture for tests, but it is no longer used by the product UI.
 
 Run the focused tests with:
 
 ```bash
 npm test -- --run tests/stream-debugger.test.ts
 ```
-

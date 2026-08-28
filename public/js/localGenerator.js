@@ -59,3 +59,24 @@ export function generateLocalStory(seed, tone, length) {
 
   return paragraphs.join("\n\n");
 }
+
+export function generateLocalContinuation(previousStory, prompt, tone, length) {
+  const latestScene = previousStory.trim().slice(-420);
+  const direction = prompt.trim() || "the next moment";
+  const paragraphs = [
+    `The next scene began after ${latestScene || "the last quiet moment"}.`,
+    `Following ${direction}, the characters moved before the chance could disappear.`,
+  ];
+
+  if (length === "medium" || length === "long") {
+    paragraphs.push("Each new clue made the path more dangerous, but turning back was no longer possible.");
+  }
+  if (length === "long") {
+    paragraphs.push("Far ahead, an unexpected choice waited in the dark.");
+  }
+  if (tone === "dark") paragraphs.push("A quiet sense of dread followed every step.");
+  if (tone === "funny") paragraphs.push("Somehow, the plan was still more ridiculous than anyone expected.");
+  if (tone === "epic") paragraphs.push("The moment would later be remembered as the beginning of a greater legend.");
+
+  return paragraphs.join("\n\n");
+}

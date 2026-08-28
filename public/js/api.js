@@ -21,6 +21,7 @@ export async function streamStory(payload, { signal, onToken, onDiagnostic } = {
     chunks: 0,
     bytes: 0,
   };
+  onDiagnostic?.({ type: "phase", phase: "connecting" });
 
   const observeChunk = (chunk) => {
     const now = performance.now();
@@ -41,6 +42,7 @@ export async function streamStory(payload, { signal, onToken, onDiagnostic } = {
   });
 
   const contentType = res.headers.get("content-type") || "";
+  onDiagnostic?.({ type: "phase", phase: "open" });
 
   if (!res.ok || contentType.includes("application/json")) {
     let data = null;
