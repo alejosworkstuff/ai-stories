@@ -71,6 +71,13 @@ const FALLBACK_MESSAGE = {
   HTTP: "AI unavailable - using local generator",
 };
 
+function getValidationMessage(error, isContinuation) {
+  if (error === "message_too_long" && isContinuation) {
+    return "This story is too long to continue. Regenerate it with Short, then try Continue again.";
+  }
+  return `Request rejected: ${error || "invalid request"}.`;
+}
+
 function refreshHistory({ entrance = false } = {}) {
   loadHistory(ELEMENTS.historyEl, { favoritesOnly, entrance });
   syncHistoryMenu();
@@ -273,6 +280,14 @@ async function runStoryRequest({ isContinuation }) {
     const story = stripCorpusCitations(String(text || streamed).trim());
 
     if (!res.ok || !story || !validation.valid) {
+      if (res.status === 400 && data?.error) {
+        if (isContinuation) messages.pop();
+        const message = getValidationMessage(data.error, isContinuation);
+        renderStory(getStoryText(), { ...streamUi, animate: false });
+        showAlertPill(message);
+        persistSession();
+        return;
+      }
       const { code } = normalizeApiError(res.status, data ?? {});
       await useLocalFallback(FALLBACK_MESSAGE[code] ?? FALLBACK_MESSAGE.HTTP);
       return;

@@ -2,6 +2,8 @@ import { fetchWithResilience } from "./http.js";
 import { hasUnexpectedControlChars } from "./stream-debugger/control-chars.js";
 import { SseParser } from "./stream-debugger/parser.js";
 
+const STREAM_TIMEOUT_MS = 30_000;
+
 export function validateStreamOutput(text) {
   const value = String(text ?? "");
   const containsUnexpectedControlChars = hasUnexpectedControlChars(value);
@@ -34,6 +36,7 @@ export async function streamStory(payload, { signal, onToken, onDiagnostic } = {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
     signal,
+    timeoutMs: STREAM_TIMEOUT_MS,
     maxRetries: 0,
   });
 
