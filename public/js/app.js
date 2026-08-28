@@ -10,6 +10,7 @@ import {
   createSessionId,
 } from "./storage.js";
 import { streamStory } from "./api.js";
+import { initStreamScope } from "./streamscope.js";
 import { normalizeApiError } from "./http.js";
 import { generateLocalStory } from "./localGenerator.js";
 import { initDarkMode, toggleDarkMode } from "./theme.js";
@@ -55,6 +56,10 @@ const ELEMENTS = {
   historyFilterFavorites: document.getElementById("historyFilterFavorites"),
   historyDeleteMenu: document.getElementById("historyDeleteMenu"),
   themeToggle: document.getElementById("themeToggle"),
+  streamscopeStart: document.getElementById("streamscopeStart"),
+  streamscopeStop: document.getElementById("streamscopeStop"),
+  streamscopeStatus: document.getElementById("streamscopeStatus"),
+  streamscopeEventLog: document.getElementById("streamscopeEventLog"),
 };
 
 const GENRE_REQUIRED_MESSAGE = "Add a genre to create a story.";
@@ -400,6 +405,19 @@ function init() {
 }
 
 function bindEvents() {
+  if (
+    ELEMENTS.streamscopeStart &&
+    ELEMENTS.streamscopeStop &&
+    ELEMENTS.streamscopeStatus &&
+    ELEMENTS.streamscopeEventLog
+  ) {
+    initStreamScope({
+      startButton: ELEMENTS.streamscopeStart,
+      stopButton: ELEMENTS.streamscopeStop,
+      status: ELEMENTS.streamscopeStatus,
+      eventLog: ELEMENTS.streamscopeEventLog,
+    });
+  }
   ELEMENTS.btn?.addEventListener("click", createStory);
   ELEMENTS.regenBtn?.addEventListener("click", regenerateStory);
   ELEMENTS.continueBtn?.addEventListener("click", continueStory);
