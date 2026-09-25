@@ -60,6 +60,8 @@ const ELEMENTS = {
   historyMenuList: document.getElementById("historyMenuList"),
   historyFilterFavorites: document.getElementById("historyFilterFavorites"),
   historyDeleteMenu: document.getElementById("historyDeleteMenu"),
+  settingsMenu: document.getElementById("settingsMenu"),
+  settingsMenuToggle: document.getElementById("settingsMenuToggle"),
   themeToggle: document.getElementById("themeToggle"),
   streamscopeToggle: document.getElementById("streamscopeToggle"),
   streamscopePanel: document.getElementById("streamscopePanel"),
@@ -99,6 +101,11 @@ function refreshHistory({ entrance = false } = {}) {
 function setHistoryMenuOpen(isOpen) {
   ELEMENTS.historyMenu?.classList.toggle("is-open", isOpen);
   ELEMENTS.historyMenuToggle?.setAttribute("aria-expanded", String(isOpen));
+}
+
+function setSettingsMenuOpen(isOpen) {
+  ELEMENTS.settingsMenu?.classList.toggle("is-open", isOpen);
+  ELEMENTS.settingsMenuToggle?.setAttribute("aria-expanded", String(isOpen));
 }
 
 function syncHistoryMenu() {
@@ -460,6 +467,10 @@ function bindEvents() {
   ELEMENTS.continueBtn?.addEventListener("click", continueStory);
   ELEMENTS.copyBtn?.addEventListener("click", copyStory);
   ELEMENTS.themeToggle?.addEventListener("click", () => toggleDarkMode(ELEMENTS.themeToggle));
+  ELEMENTS.settingsMenuToggle?.addEventListener("click", () => {
+    setSettingsMenuOpen(!ELEMENTS.settingsMenu?.classList.contains("is-open"));
+  });
+  ELEMENTS.streamscopeToggle?.addEventListener("click", () => setSettingsMenuOpen(false));
   ELEMENTS.lengthToggle?.addEventListener("click", () => {
     const isOpen = ELEMENTS.lengthDropdown?.classList.contains("is-open");
     setLengthDropdownOpen(!isOpen);
@@ -475,11 +486,15 @@ function bindEvents() {
     if (!ELEMENTS.historyMenu?.contains(e.target)) {
       setHistoryMenuOpen(false);
     }
+    if (!ELEMENTS.settingsMenu?.contains(e.target)) {
+      setSettingsMenuOpen(false);
+    }
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       setLengthDropdownOpen(false);
       setHistoryMenuOpen(false);
+      setSettingsMenuOpen(false);
     }
   });
 

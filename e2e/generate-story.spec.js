@@ -24,6 +24,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("blocks create without a genre and shows alert pill", async ({ page }) => {
+  await expect(page.getByRole("button", { name: "Create" })).toBeInViewport();
   await page.locator("#seed").fill("A violinist in Buenos Aires");
   await page.getByRole("button", { name: "Create" }).click();
 
@@ -33,6 +34,18 @@ test("blocks create without a genre and shows alert pill", async ({ page }) => {
 
   await page.getByRole("button", { name: "Create" }).click();
   await expect(page.locator(".alert-pill")).toHaveClass(/is-shaking/);
+});
+
+test("keeps create controls on screen in a unified workspace", async ({ page }) => {
+  await expect(page.locator(".workspace")).toBeVisible();
+  await expect(page.locator("#historyBox")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create" })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Regenerate" })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Continue" })).toBeInViewport();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("button", { name: "Create" })).toBeInViewport();
+  await expect(page.locator("#historyBox")).toBeVisible();
 });
 
 test("generate a story and see output, stats, and history", async ({ page }) => {
