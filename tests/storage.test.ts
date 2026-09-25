@@ -4,6 +4,7 @@ import {
   getStories,
   saveStoryVersion,
   removeStoryById,
+  toggleFavoriteById,
 } from "../public/js/storage.js";
 
 function installStorage() {
@@ -56,5 +57,36 @@ describe("nested story history", () => {
     expect(removeStoryById(child!.id)).toBe(true);
     expect(getStories()).toHaveLength(1);
     expect(getStories()[0]?.children).toEqual([]);
+  });
+});
+
+describe("favorite story ordering", () => {
+  beforeEach(installStorage);
+
+  it("pins favorites before other stories and returns unfavorited stories to the boundary", () => {
+    const oldest = saveStoryVersion("Oldest story")!;
+    const middle = saveStoryVersion("Middle story")!;
+    const newest = saveStoryVersion("Newest story")!;
+
+    toggleFavoriteById(oldest.id);
+    expect(getStories().map((story) => story.text)).toEqual([
+      "Oldest story",
+      "Newest story",
+      "Middle story",
+    ]);
+
+    toggleFavoriteById(middle.id);
+    expect(getStories().map((story) => story.text)).toEqual([
+      "Middle story",
+      "Oldest story",
+      "Newest story",
+    ]);
+
+    toggleFavoriteById(middle.id);
+    expect(getStories().map((story) => story.text)).toEqual([
+      "Oldest story",
+      "Middle story",
+      "Newest story",
+    ]);
   });
 });

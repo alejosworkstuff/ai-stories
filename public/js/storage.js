@@ -217,21 +217,30 @@ export function removeStoryById(id) {
   return true;
 }
 
+/** @param {StoryEntry[]} saved @param {StoryEntry} entry */
+function reorderFavorite(saved, entry) {
+  const index = saved.indexOf(entry);
+  if (index === -1) return;
+
+  saved.splice(index, 1);
+  if (entry.favorite) {
+    saved.unshift(entry);
+    return;
+  }
+
+  const firstNonFavorite = saved.findIndex((item) => !item.favorite);
+  if (firstNonFavorite === -1) saved.push(entry);
+  else saved.splice(firstNonFavorite, 0, entry);
+}
+
 /** @returns {StoryEntry | null} */
 export function toggleFavoriteAt(index) {
   const saved = getStories();
   if (index < 0 || index >= saved.length) return null;
 
-  const [entry] = saved.splice(index, 1);
+  const entry = saved[index];
   entry.favorite = !entry.favorite;
-
-  if (entry.favorite) {
-    saved.unshift(entry);
-  } else {
-    const firstNonFavorite = saved.findIndex((item) => !item.favorite);
-    if (firstNonFavorite === -1) saved.push(entry);
-    else saved.splice(firstNonFavorite, 0, entry);
-  }
+  reorderFavorite(saved, entry);
 
   persist(saved);
   return entry;
@@ -243,6 +252,7 @@ export function toggleFavoriteById(id) {
   const found = findStory(saved, id);
   if (!found) return null;
   found.entry.favorite = !found.entry.favorite;
+  if (found.rootId === id) reorderFavorite(saved, found.entry);
   persist(saved);
   return found.entry;
 }

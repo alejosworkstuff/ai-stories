@@ -215,7 +215,8 @@ test("continue a story appends the next part", async ({ page }) => {
     expect(body.sessionId).toBeTruthy();
     expect(body.messages.at(-1)).toMatchObject({
       role: "user",
-      content: "Add a mysterious stranger.",
+      content:
+        "Add a mysterious stranger. Continue only from the final moment; do not repeat earlier text.",
     });
 
     await route.fulfill({
